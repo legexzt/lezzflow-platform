@@ -16,7 +16,7 @@ export function AuthProvider({ children }) {
     setVerifyError(null)
     try {
       const idToken = await fbUser.getIdToken()
-      const res = await api.post('/auth/verify', { idToken })
+      const res = await api.post('/auth/verify', { idToken, role: 'seller' })
       const data = res.data || {}
       setUser(data.user || null)
       setRole(data.role || data.user?.role || null)

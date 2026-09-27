@@ -14,12 +14,12 @@ export default function Products() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const shopRes = await api.get('/shops')
+      const shopRes = await api.get('/shops?mine=true')
       const shops = Array.isArray(shopRes.data) ? shopRes.data : shopRes.data?.shops || []
       const s = shops[0] || null
       setShop(s)
       if (s) {
-        const res = await api.get('/products')
+        const res = await api.get('/products', { params: { shop_id: s.id } })
         setProducts(Array.isArray(res.data) ? res.data : res.data?.products || [])
       } else {
         setProducts([])

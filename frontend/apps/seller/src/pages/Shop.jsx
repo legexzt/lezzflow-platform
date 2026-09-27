@@ -17,7 +17,7 @@ export default function Shop() {
     let cancelled = false
     ;(async () => {
       try {
-        const res = await api.get('/shops')
+        const res = await api.get('/shops?mine=true')
         const shops = Array.isArray(res.data) ? res.data : res.data?.shops || []
         const s = shops[0]
         if (s && !cancelled) {
@@ -78,12 +78,18 @@ export default function Shop() {
     if (!form.name.trim()) return toast('Please enter a shop name', 'error')
     if (!form.address.trim()) return toast('Please enter a shop address', 'error')
 
+    const lat = Number(form.lat)
+    const lng = Number(form.lng)
+    if (form.lat === '' || form.lng === '' || Number.isNaN(lat) || Number.isNaN(lng)) {
+      return toast('Please set your shop location on the map', 'error')
+    }
+
     setSaving(true)
     const payload = {
       name: form.name.trim(),
       address: form.address.trim(),
-      lat: form.lat === '' ? null : Number(form.lat),
-      lng: form.lng === '' ? null : Number(form.lng),
+      lat,
+      lng,
       is_open: !!form.is_open,
     }
     try {

@@ -4,10 +4,10 @@ import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
 
-// Seller status flow: placed → accepted → packed
+// Seller status flow: placed → accepted → packed (orders can also be cancelled)
 const NEXT_STATUS = { placed: 'accepted', accepted: 'packed' }
 const NEXT_ACTION = { placed: 'Accept order', accepted: 'Mark packed' }
-const FILTERS = ['all', 'placed', 'accepted', 'packed']
+const FILTERS = ['all', 'placed', 'accepted', 'packed', 'cancelled']
 
 function toDate(v) {
   if (!v) return null
@@ -28,7 +28,7 @@ export default function Orders() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const shopRes = await api.get('/shops')
+      const shopRes = await api.get('/shops?mine=true')
       const shops = Array.isArray(shopRes.data) ? shopRes.data : shopRes.data?.shops || []
       const s = shops[0] || null
       setShop(s)
@@ -63,6 +63,20 @@ export default function Orders() {
       await api.patch(`/orders/${order.id}/status`, { status: next })
       setOrders((list) => list.map((o) => (o.id === order.id ? { ...o, status: next } : o)))
       toast(next === 'accepted' ? 'Order accepted' : 'Order marked as packed', 'success')
+    } catch (err) {
+      toast(getErrorMessage(err), 'error')
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  async function cancel(order) {
+    if (NEXT_STATUS[order.status] == null) return
+    setBusyId(order.id)
+    try {
+      await api.patch(`/orders/${order.id}/status`, { status: 'cancelled' })
+      setOrders((list) => list.map((o) => (o.id === order.id ? { ...o, status: 'cancelled' } : o)))
+      toast('Order cancelled', 'success')
     } catch (err) {
       toast(getErrorMessage(err), 'error')
     } finally {
@@ -156,16 +170,31 @@ export default function Orders() {
                 )}
 
                 <div className="order-bottom">
-                  {total != null && <span className="order-total">Total: ₹{total}</span>}
+                  <div className="order-total-row">
+                    {total != null && <span className="order-total">Total: ₹{total}</span>}
+                    <span className="badge badge-blue">💳 Payment coming soon</span>
+                  </div>
                   {NEXT_STATUS[o.status] ? (
-                    <button
-                      type="button"
-                      className="btn btn-primary btn-sm"
-                      onClick={() => advance(o)}
-                      disabled={busyId === o.id}
-                    >
-                      {busyId === o.id ? 'Updating…' : NEXT_ACTION[o.status]}
-                    </button>
+                    <div className="order-actions">
+                      <button
+                        type="button"
+                        className="btn btn-danger btn-sm"
+                        onClick={() => cancel(o)}
+                        disabled={busyId === o.id}
+                      >
+                        {busyId === o.id ? 'Updating…' : 'Cancel'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => advance(o)}
+                        disabled={busyId === o.id}
+                      >
+                        {busyId === o.id ? 'Updating…' : NEXT_ACTION[o.status]}
+                      </button>
+                    </div>
+                  ) : o.status === 'cancelled' ? (
+                    <span className="badge badge-grey">✕ Cancelled</span>
                   ) : (
                     <span className="badge badge-green">✓ Packed</span>
                   )}

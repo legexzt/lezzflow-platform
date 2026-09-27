@@ -46,12 +46,13 @@ export default function ProductForm() {
     let cancelled = false
     ;(async () => {
       try {
-        const shopRes = await api.get('/shops')
+        const shopRes = await api.get('/shops?mine=true')
         const shops = Array.isArray(shopRes.data) ? shopRes.data : shopRes.data?.shops || []
-        if (shops[0] && !cancelled) setShopId(shops[0].id)
+        const myShopId = shops[0]?.id || null
+        if (myShopId && !cancelled) setShopId(myShopId)
 
         if (isEdit) {
-          const res = await api.get('/products')
+          const res = await api.get('/products', { params: { shop_id: myShopId } })
           const products = Array.isArray(res.data) ? res.data : res.data?.products || []
           const p = products.find((x) => String(x.id) === String(id))
           if (cancelled) return

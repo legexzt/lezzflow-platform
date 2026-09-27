@@ -22,11 +22,14 @@ export default function Dashboard() {
   const load = useCallback(async () => {
     setLoading(true)
     try {
-      const res = await api.get('/shops')
+      const res = await api.get('/shops?mine=true')
       const myShop = toList(res.data, 'shops')[0] || null
       setShop(myShop)
       if (myShop) {
-        const [p, o] = await Promise.allSettled([api.get('/products'), api.get('/orders')])
+        const [p, o] = await Promise.allSettled([
+          api.get('/products', { params: { shop_id: myShop.id } }),
+          api.get('/orders'),
+        ])
         setCounts({
           products: p.status === 'fulfilled' ? toList(p.value.data, 'products').length : 0,
           orders: o.status === 'fulfilled' ? toList(o.value.data, 'orders').length : 0,
