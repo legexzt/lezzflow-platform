@@ -68,6 +68,7 @@ export default function ShopDetail() {
   }
 
   const distance = shop ? formatDistance(shop) : null;
+  const shopClosed = shop?.is_open === false;
 
   return (
     <div className="page">
@@ -108,11 +109,14 @@ export default function ShopDetail() {
                   )}
                   <div className="product-footer">
                     <span className="price">{formatPrice(product.price)}</span>
+                    {shopClosed && (
+                      <span className="muted closed-note">Shop is closed</span>
+                    )}
                     <button
                       type="button"
                       className="btn btn-primary btn-sm"
                       onClick={() => handleAdd(product)}
-                      disabled={outOfStock}
+                      disabled={outOfStock || shopClosed}
                     >
                       {outOfStock ? 'Out of stock' : 'Add'}
                     </button>

@@ -28,7 +28,14 @@ export default function Login() {
   return (
     <div className="login-page">
       <div className="login-card">
-        <img src="/lezzflow-icon.png" alt="LezzFlow" className="login-icon" />
+        <img
+          src="/lezzflow-icon.png"
+          alt="LezzFlow"
+          className="login-icon"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
         <h1>LezzFlow Mart</h1>
         <p className="muted">
           Order groceries from kirana shops near you — delivered or ready for pickup.

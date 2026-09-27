@@ -19,7 +19,7 @@ export function AuthProvider({ children }) {
         if (firebaseUser) {
           const idToken = await firebaseUser.getIdToken();
           setAuthToken(idToken);
-          const res = await api.post('/api/auth/verify', { idToken });
+          const res = await api.post('/api/auth/verify', { idToken, role: 'customer' });
           const data = res.data || {};
           setUser(data.user || { name: firebaseUser.displayName, email: firebaseUser.email });
           setRole(data.role || data.user?.role || null);

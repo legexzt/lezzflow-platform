@@ -46,6 +46,10 @@ export default function Home() {
   const [position, setPosition] = useState(null);
   const [locating, setLocating] = useState(false);
   const [locationError, setLocationError] = useState('');
+  const [showManualLocation, setShowManualLocation] = useState(false);
+  const [manualLat, setManualLat] = useState('');
+  const [manualLng, setManualLng] = useState('');
+  const [manualError, setManualError] = useState('');
   const [layers, setLayers] = useState({ within5km: [], within10km: [], within20km: [] });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -70,6 +74,7 @@ export default function Home() {
   const locate = useCallback(() => {
     if (!('geolocation' in navigator)) {
       setLocationError('Geolocation is not supported by this browser.');
+      setShowManualLocation(true);
       return;
     }
     setLocating(true);
@@ -88,6 +93,7 @@ export default function Home() {
             ? 'Location permission denied. Allow location access to discover nearby shops.'
             : 'Unable to get your location. Please try again.'
         );
+        setShowManualLocation(true);
       },
       { enableHighAccuracy: true, timeout: 10000 }
     );
@@ -97,6 +103,35 @@ export default function Home() {
   useEffect(() => {
     locate();
   }, [locate]);
+
+  const applyManualLocation = useCallback(
+    (lat, lng) => {
+      const coords = [lat, lng];
+      setPosition(coords);
+      setLocationError('');
+      setManualError('');
+      setShowManualLocation(false);
+      fetchDiscovery(lat, lng);
+    },
+    [fetchDiscovery]
+  );
+
+  const handleManualSubmit = useCallback(() => {
+    const lat = parseFloat(manualLat);
+    const lng = parseFloat(manualLng);
+    if (
+      Number.isNaN(lat) ||
+      Number.isNaN(lng) ||
+      lat < -90 ||
+      lat > 90 ||
+      lng < -180 ||
+      lng > 180
+    ) {
+      setManualError('Enter a valid latitude (-90 to 90) and longitude (-180 to 180).');
+      return;
+    }
+    applyManualLocation(lat, lng);
+  }, [manualLat, manualLng, applyManualLocation]);
 
   // De-dupe layers: a shop within 5 km also appears in the 10/20 km payloads.
   const groups = useMemo(() => {
@@ -124,18 +159,69 @@ export default function Home() {
     <div className="page">
       <div className="page-header">
         <h1>Shops near you</h1>
-        <button
-          type="button"
-          className="btn btn-primary"
-          onClick={locate}
-          disabled={locating}
-        >
-          {locating ? 'Locating…' : '📍 Use my location'}
-        </button>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="btn btn-outline"
+            onClick={() => {
+              setManualError('');
+              setShowManualLocation((v) => !v);
+            }}
+          >
+            {showManualLocation ? 'Cancel manual location' : 'Set location manually'}
+          </button>
+          <button
+            type="button"
+            className="btn btn-primary"
+            onClick={locate}
+            disabled={locating}
+          >
+            {locating ? 'Locating…' : '📍 Use my location'}
+          </button>
+        </div>
       </div>
 
       {locationError && <div className="banner banner-error">{locationError}</div>}
       {error && <div className="banner banner-error">{error}</div>}
+
+      {showManualLocation && (
+        <div className="manual-location">
+          <p className="muted">
+            Enter your coordinates manually, or start from the city default:
+          </p>
+          <div className="manual-location-row">
+            <input
+              type="number"
+              step="any"
+              placeholder="Latitude (e.g. 12.9716)"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+            />
+            <input
+              type="number"
+              step="any"
+              placeholder="Longitude (e.g. 77.5946)"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+            />
+            <button
+              type="button"
+              className="btn btn-primary"
+              onClick={handleManualSubmit}
+            >
+              Use this location
+            </button>
+          </div>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => applyManualLocation(DEFAULT_CENTER[0], DEFAULT_CENTER[1])}
+          >
+            Use Bengaluru city center
+          </button>
+          {manualError && <div className="banner banner-error">{manualError}</div>}
+        </div>
+      )}
 
       <ShopMap
         center={position || DEFAULT_CENTER}
@@ -143,9 +229,10 @@ export default function Home() {
         onSelectShop={handleSelectShop}
       />
 
-      {!position && !locating && (
+      {!position && !locating && !showManualLocation && (
         <p className="muted">
-          Tap &quot;Use my location&quot; to discover kirana shops delivering around you.
+          Tap &quot;Use my location&quot; or &quot;Set location manually&quot; to discover
+          kirana shops delivering around you.
         </p>
       )}
       {loading && <p className="muted">Finding shops…</p>}

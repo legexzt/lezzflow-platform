@@ -41,6 +41,7 @@ export default function Checkout() {
         shop_id: shopId,
         items: items.map((i) => ({
           product_id: i.product.id,
+          name: i.product.name,
           quantity: i.quantity,
           price: Number(i.product.price) || 0,
         })),
