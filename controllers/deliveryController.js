@@ -1,0 +1,150 @@
+const { query } = require('../db');
+
+const PARTNER_LEGAL_TRANSITIONS = {
+  requested: ['accepted'],
+  accepted: ['picked'],
+  picked: ['delivered'],
+};
+
+function isValidDeliveryStatusTransition(currentStatus, targetStatus) {
+  const allowed = PARTNER_LEGAL_TRANSITIONS[currentStatus];
+  if (!allowed) return false;
+  return allowed.includes(targetStatus);
+}
+
+/**
+ * Helper to verify partner KYC is approved
+ */
+async function checkPartnerKycApproved(partnerId) {
+  const kycResult = await query(
+    'SELECT * FROM partner_kyc WHERE partner_id = $1 AND status = $2',
+    [partnerId, 'approved']
+  );
+  return kycResult.rows.length > 0;
+}
+
+/**
+ * GET /api/delivery/requests
+ * Partner only, KYC must be approved.
+ * Returns requests assigned to this partner OR unassigned 'requested' ones.
+ */
+async function listDeliveryRequests(req, res, next) {
+  try {
+    const isApproved = await checkPartnerKycApproved(req.user.id);
+    if (!isApproved && req.user.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Forbidden: Delivery partner KYC verification must be approved to access delivery requests.',
+      });
+    }
+
+    const result = await query(
+      `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+       FROM delivery_requests dr
+       JOIN orders o ON dr.order_id = o.id
+       JOIN shops s ON o.shop_id = s.id
+       WHERE dr.partner_id = $1 OR (dr.partner_id IS NULL AND dr.status = 'requested')
+       ORDER BY dr.id DESC`,
+      [req.user.id]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/delivery/requests/:id
+ * Partner updates delivery request status:
+ * requested -> accepted -> picked -> delivered
+ */
+async function updateDeliveryRequestStatus(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status) {
+      return res.status(400).json({ error: 'status is required' });
+    }
+
+    const isApproved = await checkPartnerKycApproved(req.user.id);
+    if (!isApproved && req.user.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Forbidden: Delivery partner KYC verification must be approved.',
+      });
+    }
+
+    const deliveryResult = await query('SELECT * FROM delivery_requests WHERE id = $1', [id]);
+    if (deliveryResult.rows.length === 0) {
+      return res.status(404).json({ error: 'Delivery request not found' });
+    }
+
+    const deliveryReq = deliveryResult.rows[0];
+    const currentStatus = deliveryReq.status;
+    const targetStatus = status.toLowerCase();
+
+    // Check valid transition
+    if (!isValidDeliveryStatusTransition(currentStatus, targetStatus)) {
+      return res.status(400).json({
+        error: `Invalid delivery status transition from '${currentStatus}' to '${targetStatus}'. Allowed next: [${(PARTNER_LEGAL_TRANSITIONS[currentStatus] || []).join(', ')}]`,
+      });
+    }
+
+    // Check ownership / assignment
+    if (targetStatus === 'accepted') {
+      if (deliveryReq.partner_id !== null && deliveryReq.partner_id !== req.user.id) {
+        return res.status(409).json({
+          error: 'Delivery request has already been accepted by another partner.',
+        });
+      }
+    } else {
+      // For 'picked' or 'delivered', partner must already be assigned to this request
+      if (deliveryReq.partner_id !== req.user.id && req.user.role !== 'admin') {
+        return res.status(403).json({
+          error: 'Forbidden: You are not assigned to this delivery request.',
+        });
+      }
+    }
+
+    // Update delivery request
+    const partnerIdToSet = targetStatus === 'accepted' ? req.user.id : deliveryReq.partner_id;
+    const updatedResult = await query(
+      `UPDATE delivery_requests
+       SET status = $1, partner_id = $2, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING *`,
+      [targetStatus, partnerIdToSet, id]
+    );
+
+    // Sync order status
+    let correspondingOrderStatus = null;
+    if (targetStatus === 'accepted') {
+      correspondingOrderStatus = 'assigned';
+    } else if (targetStatus === 'picked') {
+      correspondingOrderStatus = 'picked';
+    } else if (targetStatus === 'delivered') {
+      correspondingOrderStatus = 'delivered';
+    }
+
+    if (correspondingOrderStatus) {
+      await query(
+        `UPDATE orders
+         SET status = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2`,
+        [correspondingOrderStatus, deliveryReq.order_id]
+      );
+    }
+
+    return res.json(updatedResult.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+}
+
+module.exports = {
+  listDeliveryRequests,
+  updateDeliveryRequestStatus,
+  checkPartnerKycApproved,
+  isValidDeliveryStatusTransition,
+  PARTNER_LEGAL_TRANSITIONS,
+};
