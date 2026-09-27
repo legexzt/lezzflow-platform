@@ -80,6 +80,7 @@ describe('Order Status Transitions & Delivery Assignment', () => {
         .send({
           shop_id: shop.id,
           fulfillment: 'delivery',
+          address: '123 Test Street, Hyderabad',
           items: [{ product_id: 1, name: 'Apples', price: 10, quantity: 2 }],
           total: 20,
         });
@@ -120,6 +121,7 @@ describe('Order Status Transitions & Delivery Assignment', () => {
         .send({
           shop_id: shop.id,
           fulfillment: 'delivery',
+          address: '123 Test Street, Hyderabad',
           items: [],
         });
 

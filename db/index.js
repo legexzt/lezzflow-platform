@@ -25,9 +25,10 @@ function createRealPool() {
 function createMemPool() {
   const { newDb } = require('pg-mem');
   const memDb = newDb();
-  const migrationPath = path.join(__dirname, 'migrations', '001_initial_schema.sql');
-  if (fs.existsSync(migrationPath)) {
-    const sql = fs.readFileSync(migrationPath, 'utf8');
+  const migrationsDir = path.join(__dirname, 'migrations');
+  const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
+  for (const file of files) {
+    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
     memDb.public.none(sql);
   }
   const { Pool: MemPool } = memDb.adapters.createPg();

@@ -33,7 +33,7 @@ function isValidOrderStatusTransition(currentStatus, targetStatus, role = 'selle
  */
 async function createOrder(req, res, next) {
   try {
-    const { shop_id, items, fulfillment, total } = req.body;
+    const { shop_id, items, fulfillment, total, address } = req.body;
 
     if (!shop_id || !items || !fulfillment) {
       return res.status(400).json({
@@ -47,6 +47,12 @@ async function createOrder(req, res, next) {
       });
     }
 
+    if (fulfillment === 'delivery' && !address) {
+      return res.status(400).json({
+        error: 'Delivery address is required',
+      });
+    }
+
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({
         error: 'items must be a non-empty array',
@@ -57,6 +63,12 @@ async function createOrder(req, res, next) {
     const shopResult = await query('SELECT * FROM shops WHERE id = $1', [shop_id]);
     if (shopResult.rows.length === 0) {
       return res.status(404).json({ error: 'Shop not found' });
+    }
+
+    // Verify shop is open
+    const shop = shopResult.rows[0];
+    if (shop.is_open === false) {
+      return res.status(400).json({ error: 'Shop is currently closed' });
     }
 
     // Compute or validate total
@@ -74,10 +86,10 @@ async function createOrder(req, res, next) {
     const itemsJson = typeof items === 'string' ? items : JSON.stringify(items);
 
     const result = await query(
-      `INSERT INTO orders (customer_id, shop_id, items, fulfillment, total, status)
-       VALUES ($1, $2, $3, $4, $5, 'placed')
+      `INSERT INTO orders (customer_id, shop_id, items, fulfillment, total, address, status)
+       VALUES ($1, $2, $3, $4, $5, $6, 'placed')
        RETURNING *`,
-      [req.user.id, shop_id, itemsJson, fulfillment, calculatedTotal]
+      [req.user.id, shop_id, itemsJson, fulfillment, calculatedTotal, address || null]
     );
 
     return res.status(201).json(result.rows[0]);
