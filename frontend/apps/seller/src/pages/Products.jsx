@@ -11,6 +11,7 @@ export default function Products() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
   const [deletingId, setDeletingId] = useState(null)
+  const [togglingId, setTogglingId] = useState(null)
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -47,6 +48,37 @@ export default function Products() {
       toast(getErrorMessage(err), 'error')
     } finally {
       setDeletingId(null)
+    }
+  }
+
+  async function handleStockToggle(p) {
+    const hasStock = Number(p.stock) > 0
+    setTogglingId(p.id)
+    try {
+      if (hasStock) {
+        try {
+          localStorage.setItem(`lf_stock_${p.id}`, String(p.stock))
+        } catch (_) {}
+        await api.put(`/products/${p.id}`, { stock: 0 })
+        setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, stock: 0 } : x)))
+        toast('Marked out of stock', 'success')
+      } else {
+        let restored = 10
+        try {
+          const saved = localStorage.getItem(`lf_stock_${p.id}`)
+          const parsed = parseInt(saved, 10)
+          if (!isNaN(parsed) && parsed > 0) {
+            restored = parsed
+          }
+        } catch (_) {}
+        await api.put(`/products/${p.id}`, { stock: restored })
+        setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, stock: restored } : x)))
+        toast('Back in stock', 'success')
+      }
+    } catch (err) {
+      toast(getErrorMessage(err), 'error')
+    } finally {
+      setTogglingId(null)
     }
   }
 
@@ -88,38 +120,63 @@ export default function Products() {
         </div>
       ) : (
         <ul className="product-list">
-          {products.map((p) => (
-            <li key={p.id} className="card product-card">
-              <div className="product-thumb">
-                {p.image_url || p.image ? (
-                  <img src={p.image_url || p.image} alt={p.name} loading="lazy" />
-                ) : (
-                  <span className="thumb-icon"><Icon name="bag" size={28} /></span>
-                )}
-              </div>
-              <div className="product-info">
-                <p className="product-name">{p.name}</p>
-                {p.category && <p className="muted small">{p.category}</p>}
-                <p className="product-meta">
-                  <span className="price">₹{p.price}</span>
-                  {p.stock != null && <span className="muted small"> · Stock: {p.stock}</span>}
-                </p>
-              </div>
-              <div className="product-actions">
-                <Link to={`/products/${p.id}/edit`} className="btn btn-outline btn-sm">
-                  Edit
-                </Link>
-                <button
-                  type="button"
-                  className="btn btn-danger btn-sm"
-                  onClick={() => handleDelete(p)}
-                  disabled={deletingId === p.id}
-                >
-                  {deletingId === p.id ? '…' : 'Delete'}
-                </button>
-              </div>
-            </li>
-          ))}
+          {products.map((p) => {
+            const hasStock = Number(p.stock) > 0
+            const isToggling = togglingId === p.id
+            return (
+              <li key={p.id} className="card product-card">
+                <div className="product-thumb">
+                  {p.image_url || p.image ? (
+                    <img src={p.image_url || p.image} alt={p.name} loading="lazy" />
+                  ) : (
+                    <span className="thumb-icon"><Icon name="bag" size={28} /></span>
+                  )}
+                </div>
+                <div className="product-info">
+                  <p className="product-name">{p.name}</p>
+                  {p.category && <p className="muted small">{p.category}</p>}
+                  <p className="product-meta">
+                    <span className="price">₹{p.price}</span>
+                    {p.stock != null && <span className="muted small"> · Stock: {p.stock}</span>}
+                  </p>
+                  <div className="toggle-row">
+                    {hasStock ? (
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm"
+                        onClick={() => handleStockToggle(p)}
+                        disabled={isToggling}
+                      >
+                        {isToggling ? 'Updating…' : 'Out of stock'}
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn btn-primary btn-sm"
+                        onClick={() => handleStockToggle(p)}
+                        disabled={isToggling}
+                      >
+                        {isToggling ? 'Updating…' : 'Back in stock'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="product-actions">
+                  <Link to={`/products/${p.id}/edit`} className="btn btn-outline btn-sm">
+                    Edit
+                  </Link>
+                  <button
+                    type="button"
+                    className="btn btn-danger btn-sm"
+                    onClick={() => handleDelete(p)}
+                    disabled={deletingId === p.id}
+                  >
+                    {deletingId === p.id ? '…' : 'Delete'}
+                  </button>
+                </div>
+              </li>
+            )
+          })}
         </ul>
       )}
     </div>

@@ -489,6 +489,15 @@ textarea {
   color: var(--green-dark);
 }
 
+.money-hero {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--ink);
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  margin: 6px 0 4px;
+}
+
 .quick-actions {
   display: grid;
   gap: 10px;
@@ -641,6 +650,13 @@ textarea {
   gap: 6px;
 }
 
+.toggle-row {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 /* ---------- Orders ---------- */
 .chip-row {
   display: flex;
@@ -766,6 +782,31 @@ textarea {
 }
 .nav-item.active svg {
   color: var(--brand-dark);
+}
+
+.nav-icon-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-badge {
+  position: absolute;
+  top: -4px;
+  right: -9px;
+  background: var(--brand);
+  color: var(--ink);
+  font-size: 10px;
+  font-weight: 800;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 4px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
 }
 
 /* ---------- Toasts ---------- */

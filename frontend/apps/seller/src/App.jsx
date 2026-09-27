@@ -10,7 +10,8 @@ import Products from './pages/Products.jsx'
 import ProductForm from './pages/ProductForm.jsx'
 import Orders from './pages/Orders.jsx'
 import Advisory from './pages/Advisory.jsx'
-import Settings from './pages/Settings.jsx'
+import Money from './pages/Money.jsx'
+import More from './pages/More.jsx'
 
 export default function App() {
   const { firebaseUser } = useAuth()
@@ -30,7 +31,9 @@ export default function App() {
           <Route path="/products/:id/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
           <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
-          <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+          <Route path="/money" element={<ProtectedRoute><Money /></ProtectedRoute>} />
+          <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
+          <Route path="/settings" element={<Navigate to="/more" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
