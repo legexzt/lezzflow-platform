@@ -74,7 +74,7 @@ export default function Dashboard() {
     return (
       <div className="page">
         <div className="card hero-card">
-          <h1>Namaste{firstName ? `, ${firstName}` : ''} 👋</h1>
+          <h1>Namaste{firstName ? `, ${firstName}` : ''}</h1>
           <p className="muted">
             Set up your shop to start selling to customers in your neighbourhood.
           </p>

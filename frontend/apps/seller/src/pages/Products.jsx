@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import Icon from '../components/Icon.jsx'
 
 export default function Products() {
   const toast = useToast()
@@ -76,7 +77,7 @@ export default function Products() {
 
       {products.length === 0 ? (
         <div className="card empty-card">
-          <p className="empty-emoji">📦</p>
+          <p className="empty-icon"><Icon name="box" size={40} /></p>
           <p>No products yet.</p>
           <p className="muted">
             Add your first product with the AI scanner, a barcode, or manual entry.
@@ -93,7 +94,7 @@ export default function Products() {
                 {p.image_url || p.image ? (
                   <img src={p.image_url || p.image} alt={p.name} loading="lazy" />
                 ) : (
-                  <span aria-hidden="true">🛍️</span>
+                  <span className="thumb-icon"><Icon name="bag" size={28} /></span>
                 )}
               </div>
               <div className="product-info">

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import Icon from '../components/Icon.jsx'
 
 export default function Shop() {
   const toast = useToast()
@@ -142,7 +143,7 @@ export default function Shop() {
         <div className="field">
           <label>GPS location</label>
           <button type="button" className="btn btn-outline" onClick={useMyLocation} disabled={locating}>
-            {locating ? 'Detecting location…' : '📍 Use my current location'}
+            {locating ? 'Detecting location…' : (<><Icon name="location" size={16} /> Use my current location</>)}
           </button>
           <div className="field-row">
             <input

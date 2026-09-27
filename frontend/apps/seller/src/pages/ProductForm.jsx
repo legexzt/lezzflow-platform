@@ -4,11 +4,12 @@ import { Html5Qrcode } from 'html5-qrcode'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import Icon from '../components/Icon.jsx'
 
 const TABS = [
-  { key: 'ai', label: '📷 AI Scan' },
-  { key: 'barcode', label: '🔳 Barcode' },
-  { key: 'manual', label: '✍️ Manual' },
+  { key: 'ai', label: 'AI Scan', icon: 'camera' },
+  { key: 'barcode', label: 'Barcode', icon: 'scan' },
+  { key: 'manual', label: 'Manual', icon: 'edit' },
 ]
 
 export default function ProductForm() {
@@ -281,7 +282,7 @@ export default function ProductForm() {
               className={`tab ${tab === t.key ? 'active' : ''}`}
               onClick={() => setTab(t.key)}
             >
-              {t.label}
+              <Icon name={t.icon} size={16} /> {t.label}
             </button>
           ))}
         </div>
@@ -306,7 +307,7 @@ export default function ProductForm() {
             onClick={() => scanInputRef.current?.click()}
             disabled={scanning}
           >
-            {scanning ? 'Scanning photo…' : '📷 Take / upload photo'}
+            {scanning ? 'Scanning photo…' : (<><Icon name="camera" size={16} /> Take / upload photo</>)}
           </button>
           {scanPreview && (
             <div className="scan-preview">
@@ -326,7 +327,7 @@ export default function ProductForm() {
           <p className="muted">Scan the barcode with your camera, or enter the number printed on the product packaging.</p>
           {!camScanning ? (
             <button type="button" className="btn btn-primary" onClick={startCameraScan}>
-              📷 Scan with camera
+              <Icon name="camera" size={16} /> Scan with camera
             </button>
           ) : (
             <div className="cam-wrap">

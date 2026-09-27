@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import Icon from '../components/Icon.jsx'
 
 /* Verified scheme figures (SIH 2026): project cost = margin capital / 10%,
    i.e. 90% financing on both schemes. */
@@ -184,7 +185,11 @@ function FeasibilityReport() {
     <div>
       <div className={`card verdict-card verdict-${report.verdict}`}>
         <div className="verdict-badge">
-          {report.verdict === 'go' ? '✓ GO' : '⚠ CAUTION'}
+          {report.verdict === 'go' ? (
+            <span className="verdict-inline"><Icon name="check" size={14} /> GO</span>
+          ) : (
+            <span className="verdict-inline"><Icon name="warning" size={14} /> CAUTION</span>
+          )}
         </div>
         <h3>{shopName ? `Feasibility for ${shopName}` : 'Feasibility report'}</h3>
         <p>{report.verdictReason}</p>
@@ -234,8 +239,8 @@ function FeasibilityReport() {
 }
 
 const TABS = [
-  { key: 'finance', label: '💰 Finance Calculator' },
-  { key: 'feasibility', label: '🗺️ Feasibility Report' },
+  { key: 'finance', label: 'Finance Calculator', icon: 'money' },
+  { key: 'feasibility', label: 'Feasibility Report', icon: 'map' },
 ]
 
 export default function Advisory() {
@@ -254,7 +259,7 @@ export default function Advisory() {
             className={`tab ${tab === t.key ? 'active' : ''}`}
             onClick={() => setTab(t.key)}
           >
-            {t.label}
+            <Icon name={t.icon} size={16} /> {t.label}
           </button>
         ))}
       </div>

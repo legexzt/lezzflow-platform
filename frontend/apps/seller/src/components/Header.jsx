@@ -13,13 +13,13 @@ export default function Header() {
         <div className="brand">
           {logoOk ? (
             <img
-              src="/logo-dark.png"
+              src="/logo.svg"
               alt="LezzFlow"
               className="brand-logo"
               onError={() => setLogoOk(false)}
             />
           ) : (
-            <span className="brand-word">LezzFlow</span>
+            <span className="brand-word">Lezz<span>Flow</span></span>
           )}
           <span className="brand-badge">Seller</span>
         </div>

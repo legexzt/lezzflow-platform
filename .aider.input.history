@@ -1,0 +1,504 @@
+
+# 2026-09-27 14:43:22.450792
++Build ALL 4 mobile-first React (Vite) apps exactly per frontend-BRIEF.md which is in your context. Apps live in apps/seller, apps/mart, apps/partner, apps/admin.
++
++Order of work:
++1. Scaffold each app with Vite + React (npm create vite@latest style structure, hand-write files, no interactive prompts).
++2. Implement EVERY screen and feature listed in the brief for each app. Wire every screen to the real backend API. API base from env VITE_API_URL defaulting to http://localhost:3000. Auth: Firebase Google sign-in, then POST /api/auth/verify {idToken}, then Authorization: Bearer <idToken> header on all calls (axios instance).
++3. Copy needed logo assets from /home/hatch/workspace/lezzflow-logos/ into each app public/ folder (icon, horizontal logos, favicon).
++4. No lorem ipsum, no mock data, no placeholder screens — everything functional against the API. Graceful error toasts, loading states, mobile-first CSS.
++5. After all code is written: run npm install then npm run build in EACH of the 4 apps. Fix ALL build errors. Keep iterating until all 4 apps compile cleanly.
++
++Do not stop to ask questions — make reasonable decisions and continue until all 4 apps build successfully.
+
+# 2026-09-27 14:43:22.451521
++Build ALL 4 mobile-first React (Vite) apps exactly per frontend-BRIEF.md which is in your context. Apps live in apps/seller, apps/mart, apps/partner, apps/admin.
++
++Order of work:
++1. Scaffold each app with Vite + React (npm create vite@latest style structure, hand-write files, no interactive prompts).
++2. Implement EVERY screen and feature listed in the brief for each app. Wire every screen to the real backend API. API base from env VITE_API_URL defaulting to http://localhost:3000. Auth: Firebase Google sign-in, then POST /api/auth/verify {idToken}, then Authorization: Bearer <idToken> header on all calls (axios instance).
++3. Copy needed logo assets from /home/hatch/workspace/lezzflow-logos/ into each app public/ folder (icon, horizontal logos, favicon).
++4. No lorem ipsum, no mock data, no placeholder screens — everything functional against the API. Graceful error toasts, loading states, mobile-first CSS.
++5. After all code is written: run npm install then npm run build in EACH of the 4 apps. Fix ALL build errors. Keep iterating until all 4 apps compile cleanly.
++
++Do not stop to ask questions — make reasonable decisions and continue until all 4 apps build successfully.
+
+# 2026-09-27 14:59:29.260749
++Build ONLY the seller app in apps/seller (Vite + React). Follow frontend-BRIEF.md section 1 (seller) exactly.
++
++Steps:
++1. Scaffold apps/seller as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role seller. Shop create/manage (name, address, GPS lat/lng, open/close toggle). Product add with 3 tabs: AI Scan (photo upload -> POST /api/scan/ai multipart -> auto-fill name/category/description), Barcode (input -> POST /api/scan/barcode -> auto-fill), Manual form. Product list/edit/delete. Orders list with Accept -> Pack status flow (PATCH /api/orders/:id/status).
++3. Shared: src/api.js (axios instance, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS in src/styles.css.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/seller/public/ (icon as app icon, horizontal-dark logo in header, favicon.png as favicon).
++5. Run npm install and npm run build inside apps/seller. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 14:59:29.261349
++Build ONLY the seller app in apps/seller (Vite + React). Follow frontend-BRIEF.md section 1 (seller) exactly.
++
++Steps:
++1. Scaffold apps/seller as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role seller. Shop create/manage (name, address, GPS lat/lng, open/close toggle). Product add with 3 tabs: AI Scan (photo upload -> POST /api/scan/ai multipart -> auto-fill name/category/description), Barcode (input -> POST /api/scan/barcode -> auto-fill), Manual form. Product list/edit/delete. Orders list with Accept -> Pack status flow (PATCH /api/orders/:id/status).
++3. Shared: src/api.js (axios instance, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS in src/styles.css.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/seller/public/ (icon as app icon, horizontal-dark logo in header, favicon.png as favicon).
++5. Run npm install and npm run build inside apps/seller. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:13:40.901283
++Build ONLY the seller app in apps/seller (Vite + React). Follow frontend-BRIEF.md section 1 (seller) exactly.
++
++Steps:
++1. Scaffold apps/seller as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role seller. Shop create/manage (name, address, GPS lat/lng, open/close toggle). Product add with 3 tabs: AI Scan (photo upload -> POST /api/scan/ai multipart -> auto-fill name/category/description), Barcode (input -> POST /api/scan/barcode -> auto-fill), Manual form. Product list/edit/delete. Orders list with Accept -> Pack status flow (PATCH /api/orders/:id/status).
++3. Shared: src/api.js (axios instance, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS in src/styles.css.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/seller/public/ (icon as app icon, horizontal-dark logo in header, favicon.png as favicon).
++5. Run npm install and npm run build inside apps/seller. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:13:40.905237
++Build ONLY the seller app in apps/seller (Vite + React). Follow frontend-BRIEF.md section 1 (seller) exactly.
++
++Steps:
++1. Scaffold apps/seller as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role seller. Shop create/manage (name, address, GPS lat/lng, open/close toggle). Product add with 3 tabs: AI Scan (photo upload -> POST /api/scan/ai multipart -> auto-fill name/category/description), Barcode (input -> POST /api/scan/barcode -> auto-fill), Manual form. Product list/edit/delete. Orders list with Accept -> Pack status flow (PATCH /api/orders/:id/status).
++3. Shared: src/api.js (axios instance, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS in src/styles.css.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/seller/public/ (icon as app icon, horizontal-dark logo in header, favicon.png as favicon).
++5. Run npm install and npm run build inside apps/seller. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:36:17.767096
++Build ONLY the customer app in apps/mart (Vite + React). Follow frontend-BRIEF.md section 2 (mart) exactly.
++
++Steps:
++1. Scaffold apps/mart as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase, leaflet.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role customer. Home with OpenStreetMap (Leaflet) map + GPS 'Use my location'. Shop discovery: GET /api/discover?lat=&lng= grouped in 5km / 10km / wider layers (Haversine already server-side, just display layers). Shop detail with products. Cart. Checkout with EXPLICIT choice: Delivery or Self-pickup (two big buttons). Delivery -> POST /api/orders {fulfillment:'delivery', address}; Pickup -> {fulfillment:'pickup'}. My Orders list with live status. NO payment UI except 'Payment coming soon' badge.
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, CartContext.jsx, mobile-first CSS.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/mart/public/ (icon, horizontal logos, favicon.png).
++5. Run npm install and npm run build inside apps/mart. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:36:17.768941
++Build ONLY the customer app in apps/mart (Vite + React). Follow frontend-BRIEF.md section 2 (mart) exactly.
++
++Steps:
++1. Scaffold apps/mart as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase, leaflet.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role customer. Home with OpenStreetMap (Leaflet) map + GPS 'Use my location'. Shop discovery: GET /api/discover?lat=&lng= grouped in 5km / 10km / wider layers (Haversine already server-side, just display layers). Shop detail with products. Cart. Checkout with EXPLICIT choice: Delivery or Self-pickup (two big buttons). Delivery -> POST /api/orders {fulfillment:'delivery', address}; Pickup -> {fulfillment:'pickup'}. My Orders list with live status. NO payment UI except 'Payment coming soon' badge.
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, CartContext.jsx, mobile-first CSS.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/mart/public/ (icon, horizontal logos, favicon.png).
++5. Run npm install and npm run build inside apps/mart. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:54:25.198581
++Build ONLY the delivery partner app in apps/partner (Vite + React). Follow frontend-BRIEF.md section 3 (partner) exactly.
++
++Steps:
++1. Scaffold apps/partner as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role partner. KYC onboarding form: full name, phone, Aadhaar number, PAN number, driving licence number, document photo uploads (POST /api/kyc with multipart) -> status screen (pending/approved/rejected). Delivery dashboard: available delivery requests list (GET /api/deliveries/requests), accept button (POST /api/deliveries/:id/accept), active delivery with pickup->delivered status updates, earnings summary. NEVER display or log full Aadhaar/PAN/licence numbers or document URLs — mask them.
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/partner/public/ (icon, horizontal logos, favicon.png).
++5. Run npm install and npm run build inside apps/partner. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:54:25.200322
++Build ONLY the delivery partner app in apps/partner (Vite + React). Follow frontend-BRIEF.md section 3 (partner) exactly.
++
++Steps:
++1. Scaffold apps/partner as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement: Firebase Google login -> POST /api/auth/verify -> role partner. KYC onboarding form: full name, phone, Aadhaar number, PAN number, driving licence number, document photo uploads (POST /api/kyc with multipart) -> status screen (pending/approved/rejected). Delivery dashboard: available delivery requests list (GET /api/deliveries/requests), accept button (POST /api/deliveries/:id/accept), active delivery with pickup->delivered status updates, earnings summary. NEVER display or log full Aadhaar/PAN/licence numbers or document URLs — mask them.
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, mobile-first CSS.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/partner/public/ (icon, horizontal logos, favicon.png).
++5. Run npm install and npm run build inside apps/partner. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:56:15.364830
++Fix 7 QA bugs in apps/seller (Vite + React). QA report with exact file:line references:
++
++1. CRITICAL — src/AuthContext.jsx:19: verify call sends only { idToken }. Backend defaults new users to role 'customer', so first-time sellers get locked out by ProtectedRoute ('Seller access only' wall). Fix: send { idToken, role: 'seller' } in the verify call.
++
++2. CRITICAL — src/pages/Dashboard.jsx:25-26, Orders.jsx:31-33, Products.jsx:17-19, ProductForm.jsx:49-51, Shop.jsx:20-22: all fetch GET /shops and take shops[0], which is the globally newest shop, NOT the seller's own (data leak + wrong shop_id on product creation -> backend 403). Fix: use api.get('/shops?mine=true') in all five places (backend supports ?mine=true).
++
++3. CRITICAL — src/pages/Products.jsx:22, Dashboard.jsx:29 (count), ProductForm.jsx:54 (edit): GET /products without ?shop_id= shows ALL sellers' products including competitors' Edit buttons. Fix: api.get('/products', { params: { shop_id: shopId } }) using the seller's own shop id (backend supports ?shop_id= filter).
++
++4. MEDIUM — src/pages/Orders.jsx: backend supports 'cancelled' status but UI has no cancel action, no 'cancelled' filter option, and any terminal state not in NEXT_STATUS renders as green '✓ Packed' badge (a cancelled order would show as Packed — wrong). Fix: add a cancel-order button, add 'cancelled' to the status filter, and render correct badges for terminal states.
++
++5. MEDIUM — add a visible 'Payment coming soon' badge on the Orders page near order totals. Locked beta rule: payment is coming soon. Currently zero mentions of payment in src/.
++
++6. MEDIUM — src/pages/Shop.jsx:85-86: form submits with null lat/lng when GPS not set -> backend 400 with raw error toast. Fix: validate lat/lng are valid numbers before submit; block with a friendly message if GPS location is missing.
++
++7. MEDIUM — brand assets missing: src/pages/Login.jsx:48 references /logo-dark.png, index.html:5-6 reference /favicon.png and /logo-icon.png, but apps/seller/public/ has only README.txt (404s on fresh build). Fix: copy from /home/hatch/workspace/lezzflow-logos/ into apps/seller/public/: lezzflow-horizontal-dark.png -> logo-dark.png, lezzflow-icon.png -> logo-icon.png, favicon.png -> favicon.png.
++
++Then run npm run build inside apps/seller and fix ALL build errors until it compiles cleanly. Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:56:15.366292
++Fix 7 QA bugs in apps/seller (Vite + React). QA report with exact file:line references:
++
++1. CRITICAL — src/AuthContext.jsx:19: verify call sends only { idToken }. Backend defaults new users to role 'customer', so first-time sellers get locked out by ProtectedRoute ('Seller access only' wall). Fix: send { idToken, role: 'seller' } in the verify call.
++
++2. CRITICAL — src/pages/Dashboard.jsx:25-26, Orders.jsx:31-33, Products.jsx:17-19, ProductForm.jsx:49-51, Shop.jsx:20-22: all fetch GET /shops and take shops[0], which is the globally newest shop, NOT the seller's own (data leak + wrong shop_id on product creation -> backend 403). Fix: use api.get('/shops?mine=true') in all five places (backend supports ?mine=true).
++
++3. CRITICAL — src/pages/Products.jsx:22, Dashboard.jsx:29 (count), ProductForm.jsx:54 (edit): GET /products without ?shop_id= shows ALL sellers' products including competitors' Edit buttons. Fix: api.get('/products', { params: { shop_id: shopId } }) using the seller's own shop id (backend supports ?shop_id= filter).
++
++4. MEDIUM — src/pages/Orders.jsx: backend supports 'cancelled' status but UI has no cancel action, no 'cancelled' filter option, and any terminal state not in NEXT_STATUS renders as green '✓ Packed' badge (a cancelled order would show as Packed — wrong). Fix: add a cancel-order button, add 'cancelled' to the status filter, and render correct badges for terminal states.
++
++5. MEDIUM — add a visible 'Payment coming soon' badge on the Orders page near order totals. Locked beta rule: payment is coming soon. Currently zero mentions of payment in src/.
++
++6. MEDIUM — src/pages/Shop.jsx:85-86: form submits with null lat/lng when GPS not set -> backend 400 with raw error toast. Fix: validate lat/lng are valid numbers before submit; block with a friendly message if GPS location is missing.
++
++7. MEDIUM — brand assets missing: src/pages/Login.jsx:48 references /logo-dark.png, index.html:5-6 reference /favicon.png and /logo-icon.png, but apps/seller/public/ has only README.txt (404s on fresh build). Fix: copy from /home/hatch/workspace/lezzflow-logos/ into apps/seller/public/: lezzflow-horizontal-dark.png -> logo-dark.png, lezzflow-icon.png -> logo-icon.png, favicon.png -> favicon.png.
++
++Then run npm run build inside apps/seller and fix ALL build errors until it compiles cleanly. Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 15:56:45.817389
++You MUST edit files in this Vite+React app. Do NOT just summarize or verify — make real file edits with your edit tool, then confirm each edit. 7 bugs to fix:
++
++1. src/AuthContext.jsx line 19: the verify POST sends only { idToken }. Change it to send { idToken, role: 'seller' }.
++
++2. In these 5 files, change api.get('/shops') to api.get('/shops?mine=true'): src/pages/Dashboard.jsx (lines 25-26), src/pages/Orders.jsx (lines 31-33), src/pages/Products.jsx (lines 17-19), src/pages/ProductForm.jsx (lines 49-51), src/pages/Shop.jsx (lines 20-22).
++
++3. In src/pages/Products.jsx line 22, src/pages/Dashboard.jsx line 29, src/pages/ProductForm.jsx line 54: change the products fetch to api.get('/products', { params: { shop_id: shopId } }) where shopId is the seller's own shop id already available in those components.
++
++4. src/pages/Orders.jsx: add a Cancel button for each non-terminal order that PATCHes status to 'cancelled'; add 'cancelled' to the status filter dropdown; fix the status badge so 'cancelled' shows a grey/red 'Cancelled' badge instead of falling through to the green Packed badge.
++
++5. src/pages/Orders.jsx: add a visible 'Payment coming soon' badge near the order totals section.
++
++6. src/pages/Shop.jsx lines 85-86: before submitting, check that lat and lng are valid numbers; if not, show a friendly error 'Please set your shop location on the map' and do NOT submit.
++
++7. Copy these files: /home/hatch/workspace/lezzflow-logos/lezzflow-horizontal-dark.png to public/logo-dark.png, /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png to public/logo-icon.png, /home/hatch/workspace/lezzflow-logos/favicon.png to public/favicon.png. Use cp commands.
++
++After ALL edits, run npm run build and fix any build errors. Then list every file you changed. Do not skip the edits.
+
+# 2026-09-27 15:56:45.817629
++You MUST edit files in this Vite+React app. Do NOT just summarize or verify — make real file edits with your edit tool, then confirm each edit. 7 bugs to fix:
++
++1. src/AuthContext.jsx line 19: the verify POST sends only { idToken }. Change it to send { idToken, role: 'seller' }.
++
++2. In these 5 files, change api.get('/shops') to api.get('/shops?mine=true'): src/pages/Dashboard.jsx (lines 25-26), src/pages/Orders.jsx (lines 31-33), src/pages/Products.jsx (lines 17-19), src/pages/ProductForm.jsx (lines 49-51), src/pages/Shop.jsx (lines 20-22).
++
++3. In src/pages/Products.jsx line 22, src/pages/Dashboard.jsx line 29, src/pages/ProductForm.jsx line 54: change the products fetch to api.get('/products', { params: { shop_id: shopId } }) where shopId is the seller's own shop id already available in those components.
++
++4. src/pages/Orders.jsx: add a Cancel button for each non-terminal order that PATCHes status to 'cancelled'; add 'cancelled' to the status filter dropdown; fix the status badge so 'cancelled' shows a grey/red 'Cancelled' badge instead of falling through to the green Packed badge.
++
++5. src/pages/Orders.jsx: add a visible 'Payment coming soon' badge near the order totals section.
++
++6. src/pages/Shop.jsx lines 85-86: before submitting, check that lat and lng are valid numbers; if not, show a friendly error 'Please set your shop location on the map' and do NOT submit.
++
++7. Copy these files: /home/hatch/workspace/lezzflow-logos/lezzflow-horizontal-dark.png to public/logo-dark.png, /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png to public/logo-icon.png, /home/hatch/workspace/lezzflow-logos/favicon.png to public/favicon.png. Use cp commands.
++
++After ALL edits, run npm run build and fix any build errors. Then list every file you changed. Do not skip the edits.
+
+# 2026-09-27 15:57:03.824629
++You have the 6 files in context. You MUST edit them now with your edit tool — real file edits, not summaries. You CAN run shell commands (npm, cp) — use them. 7 bugs:
++
++1. src/AuthContext.jsx line 19: the verify POST sends only { idToken }. Change it to send { idToken, role: 'seller' }.
++
++2. Change api.get('/shops') to api.get('/shops?mine=true') in: src/pages/Dashboard.jsx (lines 25-26), src/pages/Orders.jsx (lines 31-33), src/pages/Products.jsx (lines 17-19), src/pages/ProductForm.jsx (lines 49-51), src/pages/Shop.jsx (lines 20-22).
++
++3. In src/pages/Products.jsx line 22, src/pages/Dashboard.jsx line 29, src/pages/ProductForm.jsx line 54: change the products fetch to api.get('/products', { params: { shop_id: shopId } }) using the seller's own shop id available in those components.
++
++4. src/pages/Orders.jsx: add a Cancel button for each non-terminal order that PATCHes status to 'cancelled'; add 'cancelled' to the status filter dropdown; fix the status badge so 'cancelled' shows a grey/red 'Cancelled' badge instead of the green Packed badge.
++
++5. src/pages/Orders.jsx: add a visible 'Payment coming soon' badge near the order totals section.
++
++6. src/pages/Shop.jsx lines 85-86: before submitting, validate lat and lng are valid numbers; if not, show friendly error 'Please set your shop location on the map' and do NOT submit.
++
++7. Run these cp commands: cp /home/hatch/workspace/lezzflow-logos/lezzflow-horizontal-dark.png public/logo-dark.png; cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/logo-icon.png; cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png
++
++After ALL edits, run npm run build here and fix any build errors until clean. Then list every file you changed.
+
+# 2026-09-27 15:57:03.824768
++You have the 6 files in context. You MUST edit them now with your edit tool — real file edits, not summaries. You CAN run shell commands (npm, cp) — use them. 7 bugs:
++
++1. src/AuthContext.jsx line 19: the verify POST sends only { idToken }. Change it to send { idToken, role: 'seller' }.
++
++2. Change api.get('/shops') to api.get('/shops?mine=true') in: src/pages/Dashboard.jsx (lines 25-26), src/pages/Orders.jsx (lines 31-33), src/pages/Products.jsx (lines 17-19), src/pages/ProductForm.jsx (lines 49-51), src/pages/Shop.jsx (lines 20-22).
++
++3. In src/pages/Products.jsx line 22, src/pages/Dashboard.jsx line 29, src/pages/ProductForm.jsx line 54: change the products fetch to api.get('/products', { params: { shop_id: shopId } }) using the seller's own shop id available in those components.
++
++4. src/pages/Orders.jsx: add a Cancel button for each non-terminal order that PATCHes status to 'cancelled'; add 'cancelled' to the status filter dropdown; fix the status badge so 'cancelled' shows a grey/red 'Cancelled' badge instead of the green Packed badge.
++
++5. src/pages/Orders.jsx: add a visible 'Payment coming soon' badge near the order totals section.
++
++6. src/pages/Shop.jsx lines 85-86: before submitting, validate lat and lng are valid numbers; if not, show friendly error 'Please set your shop location on the map' and do NOT submit.
++
++7. Run these cp commands: cp /home/hatch/workspace/lezzflow-logos/lezzflow-horizontal-dark.png public/logo-dark.png; cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/logo-icon.png; cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png
++
++After ALL edits, run npm run build here and fix any build errors until clean. Then list every file you changed.
+
+# 2026-09-27 15:57:57.686779
++You MUST edit files with your edit tool — real edits, not summaries. You CAN run shell commands. 2 backend bugs from QA:
++
++1. Delivery address is lost: POST /api/orders accepts address in body but createOrder ignores it — orders table has no address column. Fix: (a) create db/migrations/002_add_order_address.sql with: ALTER TABLE orders ADD COLUMN address TEXT; (b) in controllers/orderController.js createOrder: destructure address from req.body; if fulfillment === 'delivery' and no address provided, return 400 { error: 'Delivery address is required' }; include address in the INSERT (add column + $6 param). Check db/migrate.js first to match the migration file convention.
++
++2. Orders on CLOSED shops: createOrder verifies the shop exists but never checks is_open. Fix: after fetching the shop, if shop.is_open === false, return 400 { error: 'Shop is currently closed' }.
++
++After edits, run npm test and fix any test failures. Then list every file you changed.
+
+# 2026-09-27 15:57:57.689978
++You MUST edit files with your edit tool — real edits, not summaries. You CAN run shell commands. 2 backend bugs from QA:
++
++1. Delivery address is lost: POST /api/orders accepts address in body but createOrder ignores it — orders table has no address column. Fix: (a) create db/migrations/002_add_order_address.sql with: ALTER TABLE orders ADD COLUMN address TEXT; (b) in controllers/orderController.js createOrder: destructure address from req.body; if fulfillment === 'delivery' and no address provided, return 400 { error: 'Delivery address is required' }; include address in the INSERT (add column + $6 param). Check db/migrate.js first to match the migration file convention.
++
++2. Orders on CLOSED shops: createOrder verifies the shop exists but never checks is_open. Fix: after fetching the shop, if shop.is_open === false, return 400 { error: 'Shop is currently closed' }.
++
++After edits, run npm test and fix any test failures. Then list every file you changed.
+
+# 2026-09-27 15:57:57.698209
++You MUST edit files with your edit tool — real edits, not summaries. You CAN run shell commands. 6 QA bugs in this Vite+React app:
++
++1. src/pages/ShopDetail.jsx: when shop.is_open === false, only a 'Closed' chip shows but Add buttons stay active. Fix: disable all Add-to-cart buttons when the shop is closed, with a 'Shop is closed' hint.
++
++2. src/pages/Checkout.jsx lines 49-53: items payload has only {product_id, quantity, price} so Orders page renders 'Item 1 x 2'. Fix: include each product's name in the item payload: {product_id, name, quantity, price}.
++
++3. Brand assets missing: there is no public/ directory, but src/pages/Login.jsx:24 references /lezzflow-icon.png, src/App.jsx:48 references a footer icon, index.html:6 references /favicon.png. Fix: mkdir -p public and run: cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/lezzflow-icon.png; cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png. Also add onError fallbacks on the img tags so a missing asset never shows a broken icon.
++
++4. src/App.jsx lines 17-21: non-customer roles only get a warning banner but can still reach checkout -> 403 from POST /api/orders. Fix: hard-block — redirect non-customer logged-in users away from shop/checkout routes (same pattern as a ProtectedRoute that requires role 'customer').
++
++5. src/AuthContext.jsx line 22: verify POST sends only { idToken }. Fix: send { idToken, role: 'customer' }.
++
++6. UX: src/pages/Home.jsx — when the user denies GPS, the map sticks to the Bengaluru default and no shops load with no manual fallback. Fix: if geolocation fails/denied, show a 'Set location manually' option (map click-to-set or a retry button), so the user is never stuck.
++
++After ALL edits, run npm run build here and fix any build errors until clean. Then list every file you changed.
+
+# 2026-09-27 15:57:57.698314
++You MUST edit files with your edit tool — real edits, not summaries. You CAN run shell commands. 6 QA bugs in this Vite+React app:
++
++1. src/pages/ShopDetail.jsx: when shop.is_open === false, only a 'Closed' chip shows but Add buttons stay active. Fix: disable all Add-to-cart buttons when the shop is closed, with a 'Shop is closed' hint.
++
++2. src/pages/Checkout.jsx lines 49-53: items payload has only {product_id, quantity, price} so Orders page renders 'Item 1 x 2'. Fix: include each product's name in the item payload: {product_id, name, quantity, price}.
++
++3. Brand assets missing: there is no public/ directory, but src/pages/Login.jsx:24 references /lezzflow-icon.png, src/App.jsx:48 references a footer icon, index.html:6 references /favicon.png. Fix: mkdir -p public and run: cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/lezzflow-icon.png; cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png. Also add onError fallbacks on the img tags so a missing asset never shows a broken icon.
++
++4. src/App.jsx lines 17-21: non-customer roles only get a warning banner but can still reach checkout -> 403 from POST /api/orders. Fix: hard-block — redirect non-customer logged-in users away from shop/checkout routes (same pattern as a ProtectedRoute that requires role 'customer').
++
++5. src/AuthContext.jsx line 22: verify POST sends only { idToken }. Fix: send { idToken, role: 'customer' }.
++
++6. UX: src/pages/Home.jsx — when the user denies GPS, the map sticks to the Bengaluru default and no shops load with no manual fallback. Fix: if geolocation fails/denied, show a 'Set location manually' option (map click-to-set or a retry button), so the user is never stuck.
++
++After ALL edits, run npm run build here and fix any build errors until clean. Then list every file you changed.
+
+# 2026-09-27 15:58:28.204558
++ONE-SHOT MODE: you get exactly ONE turn. In this single turn you MUST apply every edit below with your edit tool and run the build. Do not narrate plans, do not say 'I will start', do not ask questions, do not explore. EDIT THE FILES NOW, in this turn:
++
++EDIT 1 — src/pages/ShopDetail.jsx: find the Add-to-cart button(s); add disabled={!shop.is_open} and when closed show small text 'Shop is closed' near the buttons.
++
++EDIT 2 — src/pages/Checkout.jsx: find where items payload is built with {product_id, quantity, price}; add name to each item: {product_id, name, quantity, price} (name comes from the cart product).
++
++EDIT 3 — shell: mkdir -p public && cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/lezzflow-icon.png && cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png. Then in src/pages/Login.jsx and src/App.jsx add onError={(e)=>{e.currentTarget.style.display='none'}} to the logo img tags.
++
++EDIT 4 — src/App.jsx: replace the non-customer warning banner (lines ~17-21) with a hard block: if user is logged in and role !== 'customer', redirect to '/' (use Navigate from react-router-dom) for all shop/checkout/order routes.
++
++EDIT 5 — src/AuthContext.jsx line ~22: change the verify POST body from { idToken } to { idToken, role: 'customer' }.
++
++EDIT 6 — src/pages/Home.jsx: in the geolocation error handler, set a state showManualLocation=true and render a 'Set location manually' button that enables map-click to set location (or a city text input + retry). Never leave the user stuck on the default.
++
++After ALL 6 edits: run npm run build in this directory; fix errors until clean. End your turn with the list of files changed.
+
+# 2026-09-27 15:58:28.224353
++ONE-SHOT MODE: you get exactly ONE turn. In this single turn you MUST apply every edit below with your edit tool and run the build. Do not narrate plans, do not say 'I will start', do not ask questions, do not explore. EDIT THE FILES NOW, in this turn:
++
++EDIT 1 — src/pages/ShopDetail.jsx: find the Add-to-cart button(s); add disabled={!shop.is_open} and when closed show small text 'Shop is closed' near the buttons.
++
++EDIT 2 — src/pages/Checkout.jsx: find where items payload is built with {product_id, quantity, price}; add name to each item: {product_id, name, quantity, price} (name comes from the cart product).
++
++EDIT 3 — shell: mkdir -p public && cp /home/hatch/workspace/lezzflow-logos/lezzflow-icon.png public/lezzflow-icon.png && cp /home/hatch/workspace/lezzflow-logos/favicon.png public/favicon.png. Then in src/pages/Login.jsx and src/App.jsx add onError={(e)=>{e.currentTarget.style.display='none'}} to the logo img tags.
++
++EDIT 4 — src/App.jsx: replace the non-customer warning banner (lines ~17-21) with a hard block: if user is logged in and role !== 'customer', redirect to '/' (use Navigate from react-router-dom) for all shop/checkout/order routes.
++
++EDIT 5 — src/AuthContext.jsx line ~22: change the verify POST body from { idToken } to { idToken, role: 'customer' }.
++
++EDIT 6 — src/pages/Home.jsx: in the geolocation error handler, set a state showManualLocation=true and render a 'Set location manually' button that enables map-click to set location (or a city text input + retry). Never leave the user stuck on the default.
++
++After ALL 6 edits: run npm run build in this directory; fix errors until clean. End your turn with the list of files changed.
+
+# 2026-09-27 15:59:30.513047
++ONE-SHOT MODE: one turn, apply edits with your edit tool now, no narration. 2 tests in tests/orderTransitions.test.js fail because createOrder now correctly requires address for delivery orders:
++
++1. Test 'should allow customer to create order with fulfillment delivery' (line ~87): expects 201, gets 400 'Delivery address is required'. Fix: add address: '123 Test Street, Hyderabad' to the POST /api/orders request body in that test.
++
++2. Test 'should return 400 if items array is empty' (line ~127): expects 'items must be a non-empty array' but gets 'Delivery address is required' because address validation runs first. Fix: add address: '123 Test Street, Hyderabad' to that test's request body too, so it reaches the items validation.
++
++After edits run npm test. All 104 tests must pass. End with the list of files changed.
+
+# 2026-09-27 15:59:30.514731
++ONE-SHOT MODE: one turn, apply edits with your edit tool now, no narration. 2 tests in tests/orderTransitions.test.js fail because createOrder now correctly requires address for delivery orders:
++
++1. Test 'should allow customer to create order with fulfillment delivery' (line ~87): expects 201, gets 400 'Delivery address is required'. Fix: add address: '123 Test Street, Hyderabad' to the POST /api/orders request body in that test.
++
++2. Test 'should return 400 if items array is empty' (line ~127): expects 'items must be a non-empty array' but gets 'Delivery address is required' because address validation runs first. Fix: add address: '123 Test Street, Hyderabad' to that test's request body too, so it reaches the items validation.
++
++After edits run npm test. All 104 tests must pass. End with the list of files changed.
+
+# 2026-09-27 16:00:28.040753
++ONE-SHOT MODE: one turn, apply the edit with your edit tool now, no narration. Bug: db/index.js createMemPool() hardcodes only migrations/001_initial_schema.sql, so new migration 002_add_order_address.sql never loads in tests -> INSERT with address column fails with 500.
++
++Fix: in createMemPool(), replace the hardcoded single-file load with a loop over ALL .sql files in the migrations dir sorted alphabetically (same convention as db/migrate.js): read the dir with fs.readdirSync, filter .sql, sort, and run each file's SQL via memDb.public.none(sql).
++
++After the edit run npm test. All 104 tests must pass. End with the list of files changed.
+
+# 2026-09-27 16:00:28.043095
++ONE-SHOT MODE: one turn, apply the edit with your edit tool now, no narration. Bug: db/index.js createMemPool() hardcodes only migrations/001_initial_schema.sql, so new migration 002_add_order_address.sql never loads in tests -> INSERT with address column fails with 500.
++
++Fix: in createMemPool(), replace the hardcoded single-file load with a loop over ALL .sql files in the migrations dir sorted alphabetically (same convention as db/migrate.js): read the dir with fs.readdirSync, filter .sql, sort, and run each file's SQL via memDb.public.none(sql).
++
++After the edit run npm test. All 104 tests must pass. End with the list of files changed.
+
+# 2026-09-27 16:14:22.402424
++ONE-SHOT MODE: one turn, apply edits with your edit tool now, no narration. Fix API route mismatches in apps/partner against the real backend (routes/deliveryRoutes.js, routes/kycRoutes.js — READ them first).
++
++Backend truth:
++- GET /api/delivery/requests (list; singular 'delivery')
++- PATCH /api/delivery/requests/:id body {status} — transitions: requested->accepted->picked->delivered
++- POST /api/kyc (submit), GET /api/kyc (my status). There is NO /kyc/status and NO earnings endpoint; delivery_requests has no payout column.
++
++Fixes in apps/partner/src/api.js:
++1. fetchKycStatus: GET '/kyc/status' -> GET '/kyc'
++2. fetchDeliveryRequests: GET '/deliveries/requests' -> GET '/delivery/requests'
++3. acceptDelivery(id): POST '/deliveries//accept' -> PATCH '/delivery/requests/' with body { status: 'accepted' }
++4. updateDeliveryStatus(id, status): PATCH '/deliveries//status' -> PATCH '/delivery/requests/' with body { status }
++5. fetchEarnings: DELETE it. Earnings summary must be computed client-side in Dashboard.jsx as count of requests with status 'delivered' — label it 'Deliveries completed'. NEVER invent rupee amounts; backend has no payout model.
++6. verifyAuth: send { idToken, role: 'partner' } (explicit role, like seller/mart apps).
++
++Fixes in apps/partner/src/App.jsx:
++7. Protected(): hard role block — if firebaseUser is logged in but role is neither 'partner' nor 'admin', render an access-denied screen ('This app is for delivery partners') with a sign-out button, instead of redirecting into partner routes.
++
++Then update Dashboard.jsx if it used the old api function signatures. Run npm run build inside apps/partner until it compiles cleanly. End with the list of files changed.
+
+# 2026-09-27 16:14:22.403948
++ONE-SHOT MODE: one turn, apply edits with your edit tool now, no narration. Fix API route mismatches in apps/partner against the real backend (routes/deliveryRoutes.js, routes/kycRoutes.js — READ them first).
++
++Backend truth:
++- GET /api/delivery/requests (list; singular 'delivery')
++- PATCH /api/delivery/requests/:id body {status} — transitions: requested->accepted->picked->delivered
++- POST /api/kyc (submit), GET /api/kyc (my status). There is NO /kyc/status and NO earnings endpoint; delivery_requests has no payout column.
++
++Fixes in apps/partner/src/api.js:
++1. fetchKycStatus: GET '/kyc/status' -> GET '/kyc'
++2. fetchDeliveryRequests: GET '/deliveries/requests' -> GET '/delivery/requests'
++3. acceptDelivery(id): POST '/deliveries//accept' -> PATCH '/delivery/requests/' with body { status: 'accepted' }
++4. updateDeliveryStatus(id, status): PATCH '/deliveries//status' -> PATCH '/delivery/requests/' with body { status }
++5. fetchEarnings: DELETE it. Earnings summary must be computed client-side in Dashboard.jsx as count of requests with status 'delivered' — label it 'Deliveries completed'. NEVER invent rupee amounts; backend has no payout model.
++6. verifyAuth: send { idToken, role: 'partner' } (explicit role, like seller/mart apps).
++
++Fixes in apps/partner/src/App.jsx:
++7. Protected(): hard role block — if firebaseUser is logged in but role is neither 'partner' nor 'admin', render an access-denied screen ('This app is for delivery partners') with a sign-out button, instead of redirecting into partner routes.
++
++Then update Dashboard.jsx if it used the old api function signatures. Run npm run build inside apps/partner until it compiles cleanly. End with the list of files changed.
+
+# 2026-09-27 16:17:41.513267
++In apps/partner/src/api.js, apply these 6 edits NOW using your edit tool:
++
++1. Line with api.get('/kyc/status') -> api.get('/kyc')
++2. Line with api.get('/deliveries/requests') -> api.get('/delivery/requests')
++3. acceptDelivery: api.post(`/deliveries/${id}/accept`) -> api.patch(`/delivery/requests/${id}`, { status: 'accepted' })
++4. updateDeliveryStatus: api.patch(`/deliveries/${id}/status`, { status }) -> api.patch(`/delivery/requests/${id}`, { status })
++5. Delete the fetchEarnings function entirely (GET /deliveries/earnings does not exist on backend).
++6. verifyAuth: api.post('/auth/verify', { idToken }) -> api.post('/auth/verify', { idToken, role: 'partner' })
++
++Also in apps/partner/src/pages/Dashboard.jsx: replace any earnings display with a simple count of requests where status==='delivered', labeled 'Deliveries completed'. Do not invent money amounts.
++
++Then run: cd apps/partner && npm run build — fix errors until clean. Reply with DONE and files changed.
+
+# 2026-09-27 16:17:41.515920
++In apps/partner/src/api.js, apply these 6 edits NOW using your edit tool:
++
++1. Line with api.get('/kyc/status') -> api.get('/kyc')
++2. Line with api.get('/deliveries/requests') -> api.get('/delivery/requests')
++3. acceptDelivery: api.post(`/deliveries/${id}/accept`) -> api.patch(`/delivery/requests/${id}`, { status: 'accepted' })
++4. updateDeliveryStatus: api.patch(`/deliveries/${id}/status`, { status }) -> api.patch(`/delivery/requests/${id}`, { status })
++5. Delete the fetchEarnings function entirely (GET /deliveries/earnings does not exist on backend).
++6. verifyAuth: api.post('/auth/verify', { idToken }) -> api.post('/auth/verify', { idToken, role: 'partner' })
++
++Also in apps/partner/src/pages/Dashboard.jsx: replace any earnings display with a simple count of requests where status==='delivered', labeled 'Deliveries completed'. Do not invent money amounts.
++
++Then run: cd apps/partner && npm run build — fix errors until clean. Reply with DONE and files changed.
+
+# 2026-09-27 16:19:24.671762
++In apps/partner/src/pages/Dashboard.jsx, fetchEarnings no longer exists in ../api (it was deleted). Apply edits NOW:
++
++1. Remove fetchEarnings from the import list (keep acceptDelivery, fetchDeliveryRequests, updateDeliveryStatus).
++2. In load(): delete the entire try/catch block that calls fetchEarnings() and setEarnings (the 'Earnings endpoint may not exist yet' block). Keep the fetchDeliveryRequests block.
++3. Remove the earnings state if now unused: delete 'const [earnings, setEarnings] = useState(null);' and change summary to use derived only: const summary = { today: derived.today, total: derived.total, completed: derived.completed };
++4. Delete normalizeEarnings function if it becomes unused.
++5. Make sure computeEarnings counts requests with status 'delivered' and labels the card 'Deliveries completed' — no rupee amounts anywhere (backend has no payout model).
++
++Then: cd apps/partner && npm run build — fix errors until clean. Reply DONE.
+
+# 2026-09-27 16:19:24.672594
++In apps/partner/src/pages/Dashboard.jsx, fetchEarnings no longer exists in ../api (it was deleted). Apply edits NOW:
++
++1. Remove fetchEarnings from the import list (keep acceptDelivery, fetchDeliveryRequests, updateDeliveryStatus).
++2. In load(): delete the entire try/catch block that calls fetchEarnings() and setEarnings (the 'Earnings endpoint may not exist yet' block). Keep the fetchDeliveryRequests block.
++3. Remove the earnings state if now unused: delete 'const [earnings, setEarnings] = useState(null);' and change summary to use derived only: const summary = { today: derived.today, total: derived.total, completed: derived.completed };
++4. Delete normalizeEarnings function if it becomes unused.
++5. Make sure computeEarnings counts requests with status 'delivered' and labels the card 'Deliveries completed' — no rupee amounts anywhere (backend has no payout model).
++
++Then: cd apps/partner && npm run build — fix errors until clean. Reply DONE.
+
+# 2026-09-27 16:20:12.889422
++In apps/partner/src/App.jsx, add a hard role block. Apply edits NOW:
++
++1. In Protected(), also read role and signOut from useAuth() (check AuthContext exports: it exposes role and signOut — verify names first).
++2. After the firebaseUser check, add: if (role && role !== 'partner' && role !== 'admin') render an access-denied screen: a centered message 'This app is for delivery partners only.' plus a Sign out button that calls signOut(). Do NOT redirect (all routes are protected, a redirect would loop).
++3. While role is still loading/null (role === null but firebaseUser exists), fall through to existing behavior — only block when role is known and wrong.
++
++Then: cd apps/partner && npm run build — fix errors until clean. Reply DONE.
+
+# 2026-09-27 16:20:12.891209
++In apps/partner/src/App.jsx, add a hard role block. Apply edits NOW:
++
++1. In Protected(), also read role and signOut from useAuth() (check AuthContext exports: it exposes role and signOut — verify names first).
++2. After the firebaseUser check, add: if (role && role !== 'partner' && role !== 'admin') render an access-denied screen: a centered message 'This app is for delivery partners only.' plus a Sign out button that calls signOut(). Do NOT redirect (all routes are protected, a redirect would loop).
++3. While role is still loading/null (role === null but firebaseUser exists), fall through to existing behavior — only block when role is known and wrong.
++
++Then: cd apps/partner && npm run build — fix errors until clean. Reply DONE.
+
+# 2026-09-27 16:20:45.214694
++Build ONLY the admin app in apps/admin (Vite + React). Follow frontend-BRIEF.md section 4 (admin) exactly.
++
++Steps:
++1. Scaffold apps/admin as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement against the REAL backend admin endpoints (READ routes/adminRoutes.js and controllers/adminController.js first):
++   - Firebase Google login -> POST /api/auth/verify with { idToken, role: 'admin' }
++   - Hard role block: logged-in user whose role is not 'admin' sees an access-denied screen with sign-out (do NOT redirect, all routes are protected)
++   - Dashboard: GET /api/admin/stats (platform overview cards)
++   - Shops: GET /api/admin/shops?search=
++   - Orders: GET /api/admin/orders?status=
++   - Users: GET /api/admin/users?role=
++   - Products: GET /api/admin/products?shopId=
++   - KYC review: pending list + approve/reject (match kycRoutes.js admin endpoints exactly)
++   - NEVER display document URLs or full Aadhaar/PAN/licence numbers — mask everything, show only 'Document on file' labels
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, clean desktop-first CSS with sidebar nav, loading/error/empty states on every page.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/admin/public/ (use lezzflow-icon.png as logo-icon, favicon.png, lezzflow-horizontal-dark.png as logo). Reference /favicon.png in index.html.
++5. Run npm install and npm run build inside apps/admin. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
+
+# 2026-09-27 16:20:45.215565
++Build ONLY the admin app in apps/admin (Vite + React). Follow frontend-BRIEF.md section 4 (admin) exactly.
++
++Steps:
++1. Scaffold apps/admin as Vite + React app (package.json, vite.config.js, index.html, src/main.jsx, src/App.jsx). Install deps: react, react-dom, react-router-dom, axios, firebase.
++2. Implement against the REAL backend admin endpoints (READ routes/adminRoutes.js and controllers/adminController.js first):
++   - Firebase Google login -> POST /api/auth/verify with { idToken, role: 'admin' }
++   - Hard role block: logged-in user whose role is not 'admin' sees an access-denied screen with sign-out (do NOT redirect, all routes are protected)
++   - Dashboard: GET /api/admin/stats (platform overview cards)
++   - Shops: GET /api/admin/shops?search=
++   - Orders: GET /api/admin/orders?status=
++   - Users: GET /api/admin/users?role=
++   - Products: GET /api/admin/products?shopId=
++   - KYC review: pending list + approve/reject (match kycRoutes.js admin endpoints exactly)
++   - NEVER display document URLs or full Aadhaar/PAN/licence numbers — mask everything, show only 'Document on file' labels
++3. Shared: src/api.js (axios, VITE_API_URL default http://localhost:3000, Bearer token), src/AuthContext.jsx, clean desktop-first CSS with sidebar nav, loading/error/empty states on every page.
++4. Copy logos from /home/hatch/workspace/lezzflow-logos/ to apps/admin/public/ (use lezzflow-icon.png as logo-icon, favicon.png, lezzflow-horizontal-dark.png as logo). Reference /favicon.png in index.html.
++5. Run npm install and npm run build inside apps/admin. Fix ALL build errors until it compiles cleanly.
++
++Work in small steps, saving files as you go. Do not stop to ask questions.
