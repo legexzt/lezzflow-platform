@@ -5,7 +5,15 @@ export DEBIAN_FRONTEND=noninteractive
 
 # --- base packages ---
 apt-get update -qq
-apt-get install -y -qq docker.io docker-compose-plugin nginx certbot python3-certbot-nginx git curl openssl ca-certificates
+apt-get install -y -qq ca-certificates curl gnupg git openssl
+# NOTE: docker-compose-plugin is NOT in Ubuntu's repos (breaks the whole
+# apt transaction if listed) — use Docker's official repo instead.
+install -m 0755 -d /etc/apt/keyrings
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+chmod a+r /etc/apt/keyrings/docker.asc
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $(. /etc/os-release && echo "$VERSION_CODENAME") stable" | tee /etc/apt/sources.list.d/docker.list > /dev/null
+apt-get update -qq
+apt-get install -y -qq docker-ce docker-ce-cli containerd.io docker-buildx-plugin docker-compose-plugin nginx certbot python3-certbot-nginx
 
 # --- node 20 ---
 curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
