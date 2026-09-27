@@ -903,3 +903,89 @@ textarea {
     font-size: 26px;
   }
 }
+
+/* ---- Advisory page ---- */
+.advisory-page .tabs { margin-bottom: 14px; }
+
+.scheme-card { position: relative; }
+.scheme-badge {
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 700;
+  color: #0a7a3d;
+  background: #e6f6ec;
+  border-radius: 999px;
+  padding: 4px 12px;
+  margin-bottom: 8px;
+}
+.scheme-card h3 { margin: 4px 0; }
+.scheme-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 12px 0;
+}
+.scheme-grid .k {
+  display: block;
+  font-size: 12px;
+  color: #6b7280;
+}
+.scheme-grid .v { font-weight: 600; }
+.scheme-grid .v.big { font-size: 20px; color: #0a7a3d; }
+.margin-note {
+  font-size: 13px;
+  background: #f6f8f7;
+  border-radius: 10px;
+  padding: 10px 12px;
+}
+.compare-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin: 10px 0;
+}
+.compare-cell {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 13px;
+}
+.compare-cell.active { border-color: #0a7a3d; background: #f2faf5; }
+.compare-cell .emi { font-weight: 700; color: #0a7a3d; }
+
+.verdict-card { border-left: 5px solid #9ca3af; }
+.verdict-card.verdict-go { border-left-color: #0a7a3d; }
+.verdict-card.verdict-caution { border-left-color: #d97706; }
+.verdict-badge {
+  display: inline-block;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  border-radius: 999px;
+  padding: 4px 14px;
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.verdict-go .verdict-badge { color: #0a7a3d; background: #e6f6ec; }
+.verdict-caution .verdict-badge { color: #92400e; background: #fef3c7; }
+
+.bar-list { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: flex; align-items: center; gap: 10px; font-size: 13px; }
+.bar-label { width: 110px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bar-track { flex: 1; height: 10px; background: #eef1f0; border-radius: 999px; overflow: hidden; }
+.bar-fill { height: 100%; background: #0a7a3d; border-radius: 999px; }
+.bar-n { width: 28px; text-align: right; font-weight: 600; }
+
+.guidance-list { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; }
+.guidance-list li { font-size: 14px; line-height: 1.45; }
+
+.error-text { color: #b91c1c; font-size: 13px; }
+.muted.small { font-size: 12px; }
+
+/* Desktop: advisory content breathes in two columns */
+@media (min-width: 900px) {
+  .advisory-page { max-width: 1020px; margin: 0 auto; }
+  .advisory-page .scheme-grid { grid-template-columns: repeat(3, 1fr); }
+}

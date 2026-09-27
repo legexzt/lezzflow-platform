@@ -11,6 +11,7 @@ const adminRoutes = require('./adminRoutes');
 const kycRoutes = require('./kycRoutes');
 const scanRoutes = require('./scanRoutes');
 const uploadRoutes = require('./uploadRoutes');
+const advisoryRoutes = require('./advisoryRoutes');
 
 // Mount sub-routes under /api
 router.use('/auth', authRoutes);
@@ -23,6 +24,7 @@ router.use('/admin', adminRoutes);
 router.use('/', kycRoutes); // /api/kyc, /api/admin/kyc/...
 router.use('/scan', scanRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/advisory', advisoryRoutes);
 
 // Payment coming soon endpoint
 router.get('/payment', (req, res) => {

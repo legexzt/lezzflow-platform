@@ -9,6 +9,7 @@ import Shop from './pages/Shop.jsx'
 import Products from './pages/Products.jsx'
 import ProductForm from './pages/ProductForm.jsx'
 import Orders from './pages/Orders.jsx'
+import Advisory from './pages/Advisory.jsx'
 
 export default function App() {
   const { firebaseUser } = useAuth()
@@ -27,6 +28,7 @@ export default function App() {
           <Route path="/products/new" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
           <Route path="/products/:id/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
           <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+          <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
