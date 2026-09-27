@@ -4,6 +4,7 @@ import api from '../api';
 import { useCart } from '../CartContext.jsx';
 import PaymentBadge from '../components/PaymentBadge.jsx';
 import { formatPrice } from '../shopUtils';
+import Icon from '../components/Icon.jsx';
 
 export default function Checkout() {
   const { items, shopId, shopName, total, clear } = useCart();
@@ -94,7 +95,7 @@ export default function Checkout() {
           className={`choice-btn ${fulfillment === 'delivery' ? 'selected' : ''}`}
           onClick={() => setFulfillment('delivery')}
         >
-          <span className="choice-icon">🛵</span>
+          <span className="choice-icon"><Icon name="scooter" size={28} /></span>
           <span className="choice-title">Delivery</span>
           <span className="choice-sub">A LezzFlow partner brings it to you</span>
         </button>
@@ -103,7 +104,7 @@ export default function Checkout() {
           className={`choice-btn ${fulfillment === 'pickup' ? 'selected' : ''}`}
           onClick={() => setFulfillment('pickup')}
         >
-          <span className="choice-icon">🛍️</span>
+          <span className="choice-icon"><Icon name="bag" size={28} /></span>
           <span className="choice-title">Self-pickup</span>
           <span className="choice-sub">Collect from the shop yourself</span>
         </button>

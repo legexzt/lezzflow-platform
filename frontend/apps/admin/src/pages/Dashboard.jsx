@@ -1,3 +1,4 @@
+import Icon from '../components/Icon.jsx';
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
@@ -5,12 +6,12 @@ import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
 import { errMsg, prettify } from '../utils.js';
 
 const KNOWN_CARDS = [
-  { keys: ['users', 'totalUsers', 'total_users'], label: 'Users', icon: '👥' },
-  { keys: ['shops', 'totalShops', 'total_shops'], label: 'Shops', icon: '🏪' },
-  { keys: ['products', 'totalProducts', 'total_products'], label: 'Products', icon: '🛒' },
-  { keys: ['orders', 'totalOrders', 'total_orders'], label: 'Orders', icon: '📦' },
-  { keys: ['partners', 'totalPartners', 'total_partners'], label: 'Delivery partners', icon: '🚚' },
-  { keys: ['pendingKyc', 'pending_kyc', 'kycPending', 'pendingKycCount'], label: 'Pending KYC', icon: '🪪' },
+  { keys: ['users', 'totalUsers', 'total_users'], label: 'Users', icon: 'users' },
+  { keys: ['shops', 'totalShops', 'total_shops'], label: 'Shops', icon: 'home' },
+  { keys: ['products', 'totalProducts', 'total_products'], label: 'Products', icon: 'cart' },
+  { keys: ['orders', 'totalOrders', 'total_orders'], label: 'Orders', icon: 'box' },
+  { keys: ['partners', 'totalPartners', 'total_partners'], label: 'Delivery partners', icon: 'scooter' },
+  { keys: ['pendingKyc', 'pending_kyc', 'kycPending', 'pendingKycCount'], label: 'Pending KYC', icon: 'idcard' },
 ];
 
 function asNumber(v) {
@@ -69,7 +70,7 @@ export default function Dashboard() {
     if (usedKeys.has(key)) continue;
     const n = asNumber(value);
     if (n !== null) {
-      cards.push({ label: prettify(key), icon: '📈', value: n });
+      cards.push({ label: prettify(key), icon: 'chart', value: n });
     }
   }
 
@@ -86,7 +87,7 @@ export default function Dashboard() {
         <div className="card-grid">
           {cards.map((c) => (
             <div className="stat-card" key={c.label}>
-              <span className="stat-icon">{c.icon}</span>
+              <span className="stat-icon"><Icon name={c.icon} size={22} /></span>
               <span className="stat-value">{c.value.toLocaleString('en-IN')}</span>
               <span className="stat-label">{c.label}</span>
             </div>
@@ -98,23 +99,23 @@ export default function Dashboard() {
         <h2>Manage</h2>
         <div className="quick-links-grid">
           <Link className="quick-link" to="/kyc">
-            <span>🪪 Review partner KYC</span>
+            <span><Icon name="idcard" size={16} /> Review partner KYC</span>
             <span>→</span>
           </Link>
           <Link className="quick-link" to="/shops">
-            <span>🏪 View shops</span>
+            <span><Icon name="home" size={16} /> View shops</span>
             <span>→</span>
           </Link>
           <Link className="quick-link" to="/orders">
-            <span>📦 View orders</span>
+            <span><Icon name="box" size={16} /> View orders</span>
             <span>→</span>
           </Link>
           <Link className="quick-link" to="/users">
-            <span>👥 View users</span>
+            <span><Icon name="users" size={16} /> View users</span>
             <span>→</span>
           </Link>
           <Link className="quick-link" to="/products">
-            <span>🛒 View products</span>
+            <span><Icon name="cart" size={16} /> View products</span>
             <span>→</span>
           </Link>
         </div>

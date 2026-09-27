@@ -10,7 +10,7 @@ export function Loading({ message = 'Loading…', fullScreen = false }) {
 export function ErrorState({ message, onRetry }) {
   return (
     <div className="state">
-      <p className="state-error-text">⚠️ {message || 'Something went wrong.'}</p>
+      <p className="state-error-text">{message || 'Something went wrong.'}</p>
       {onRetry && (
         <button className="btn btn-outline" onClick={onRetry} type="button">
           Try again

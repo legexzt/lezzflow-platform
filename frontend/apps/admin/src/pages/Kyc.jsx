@@ -9,17 +9,17 @@ import { asArray, errMsg, formatDate, statusBadge } from '../utils.js';
 const DOC_DEFS = [
   {
     label: 'Aadhaar',
-    icon: '🪪',
+    icon: 'idcard',
     keys: ['aadhaar', 'aadhar', 'aadhaar_url', 'aadhaarUrl', 'aadhaar_number', 'aadhaarNumber'],
   },
   {
     label: 'PAN',
-    icon: '💳',
+    icon: 'card',
     keys: ['pan', 'pan_url', 'panUrl', 'pan_number', 'panNumber'],
   },
   {
     label: 'Driving licence',
-    icon: '🚗',
+    icon: 'car',
     keys: [
       'driving_licence',
       'drivingLicence',
@@ -119,7 +119,7 @@ export default function Kyc() {
       </header>
 
       <div className="alert alert-info" style={{ marginBottom: 16 }}>
-        🔒 For privacy, document files and ID numbers are never displayed in this console — only
+        For privacy, document files and ID numbers are never displayed in this console — only
         whether each document is on file.
       </div>
 
@@ -137,7 +137,7 @@ export default function Kyc() {
       ) : error ? (
         <ErrorState message={error} onRetry={load} />
       ) : items.length === 0 ? (
-        <EmptyState message="No pending KYC submissions. You're all caught up. 🎉" />
+        <EmptyState message="No pending KYC submissions. You're all caught up." />
       ) : (
         <div className="kyc-list">
           {items.map((item, i) => {

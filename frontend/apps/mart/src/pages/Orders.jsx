@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import api from '../api';
 import { formatPrice } from '../shopUtils';
+import Icon from '../components/Icon.jsx';
 
 const POLL_MS = 10000;
 
@@ -31,7 +32,7 @@ function OrderCard({ order }) {
       </div>
       <div className="order-meta">
         <span className="chip">
-          {order.fulfillment === 'pickup' ? '🛍️ Self-pickup' : '🛵 Delivery'}
+          {order.fulfillment === 'pickup' ? (<><Icon name="bag" size={14} /> Self-pickup</>) : (<><Icon name="scooter" size={14} /> Delivery</>)}
         </span>
         {itemCount > 0 && <span className="chip">{itemCount} items</span>}
         {total != null && <span className="chip">{formatPrice(total)}</span>}

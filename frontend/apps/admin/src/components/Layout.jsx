@@ -1,13 +1,14 @@
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
+import Icon from './Icon.jsx';
 
 const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: '📊', end: true },
-  { to: '/shops', label: 'Shops', icon: '🏪' },
-  { to: '/orders', label: 'Orders', icon: '📦' },
-  { to: '/users', label: 'Users', icon: '👥' },
-  { to: '/products', label: 'Products', icon: '🛒' },
-  { to: '/kyc', label: 'KYC Review', icon: '🪪' },
+  { to: '/', label: 'Dashboard', icon: 'chart', end: true },
+  { to: '/shops', label: 'Shops', icon: 'home' },
+  { to: '/orders', label: 'Orders', icon: 'box' },
+  { to: '/users', label: 'Users', icon: 'users' },
+  { to: '/products', label: 'Products', icon: 'cart' },
+  { to: '/kyc', label: 'KYC Review', icon: 'idcard' },
 ];
 
 export default function Layout({ children }) {
@@ -30,7 +31,7 @@ export default function Layout({ children }) {
               end={item.end}
               className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
             >
-              <span className="nav-icon">{item.icon}</span>
+              <span className="nav-icon"><Icon name={item.icon} size={20} /></span>
               {item.label}
             </NavLink>
           ))}

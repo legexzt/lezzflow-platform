@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../api';
+import Icon from './Icon.jsx';
 
 export default function PaymentBadge() {
   const [message, setMessage] = useState('Payment coming soon');
@@ -23,5 +24,5 @@ export default function PaymentBadge() {
     };
   }, []);
 
-  return <span className="payment-badge">💳 {message}</span>;
+  return <span className="payment-badge"><Icon name="card" size={14} /> {message}</span>;
 }

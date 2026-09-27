@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import ShopMap from '../components/ShopMap.jsx';
 import { formatDistance } from '../shopUtils';
+import Icon from '../components/Icon.jsx';
 
 const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru fallback until GPS resolves
 
@@ -176,7 +177,7 @@ export default function Home() {
             onClick={locate}
             disabled={locating}
           >
-            {locating ? 'Locating…' : '📍 Use my location'}
+            {locating ? 'Locating…' : (<><Icon name="location" size={16} /> Use my location</>)}
           </button>
         </div>
       </div>
