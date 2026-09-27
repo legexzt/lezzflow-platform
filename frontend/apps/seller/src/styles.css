@@ -340,6 +340,26 @@ textarea {
   flex: 1;
 }
 
+.cam-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.cam-region {
+  width: 100%;
+  max-width: 420px;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #000;
+}
+
+.cam-region video {
+  width: 100%;
+  display: block;
+}
+
 .image-preview {
   width: 84px;
   height: 84px;

@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams, Link } from 'react-router-dom'
+import { Html5Qrcode } from 'html5-qrcode'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
@@ -37,6 +38,23 @@ export default function ProductForm() {
   // Barcode state
   const [code, setCode] = useState('')
   const [lookingUp, setLookingUp] = useState(false)
+
+  // Camera barcode scanner state
+  const [camScanning, setCamScanning] = useState(false)
+  const camScannerRef = useRef(null)
+  const camRegionId = 'barcode-cam-region'
+
+  // Stop camera if the component unmounts mid-scan
+  useEffect(() => {
+    return () => {
+      const s = camScannerRef.current
+      camScannerRef.current = null
+      if (s) {
+        s.stop().catch(() => {})
+        try { s.clear() } catch { /* noop */ }
+      }
+    }
+  }, [])
 
   // Image upload state
   const [uploading, setUploading] = useState(false)
@@ -112,15 +130,15 @@ export default function ProductForm() {
     }
   }
 
-  async function handleBarcodeLookup(e) {
-    e.preventDefault()
-    if (!code.trim()) {
+  async function lookupBarcode(codeValue) {
+    const c = (codeValue ?? code).trim()
+    if (!c) {
       toast('Enter a barcode number first', 'error')
       return
     }
     setLookingUp(true)
     try {
-      const res = await api.post('/scan/barcode', { code: code.trim() })
+      const res = await api.post('/scan/barcode', { code: c })
       const d = res.data || {}
       if (d.found === false) {
         toast('No product found for this barcode — fill the details manually below.', 'info')
@@ -137,6 +155,47 @@ export default function ProductForm() {
       toast(getErrorMessage(err, 'Barcode lookup failed'), 'error')
     } finally {
       setLookingUp(false)
+    }
+  }
+
+  function handleBarcodeLookup(e) {
+    e.preventDefault()
+    lookupBarcode(code)
+  }
+
+  async function stopCameraScan() {
+    const s = camScannerRef.current
+    camScannerRef.current = null
+    setCamScanning(false)
+    if (s) {
+      try { await s.stop() } catch { /* noop */ }
+      try { s.clear() } catch { /* noop */ }
+    }
+  }
+
+  async function startCameraScan() {
+    if (camScanning) return
+    setCamScanning(true)
+    // let the camera <div/> render before attaching the scanner
+    await new Promise((r) => setTimeout(r, 60))
+    try {
+      const scanner = new Html5Qrcode(camRegionId)
+      camScannerRef.current = scanner
+      await scanner.start(
+        { facingMode: 'environment' },
+        { fps: 10, qrbox: { width: 250, height: 150 } },
+        async (decodedText) => {
+          await stopCameraScan()
+          setCode(decodedText)
+          toast(`Barcode scanned: ${decodedText}`, 'success')
+          lookupBarcode(decodedText)
+        },
+        () => {} // per-frame scan misses are noise; ignore
+      )
+    } catch (err) {
+      camScannerRef.current = null
+      setCamScanning(false)
+      toast('Could not open the camera. Allow camera access, or enter the barcode number manually.', 'error')
     }
   }
 
@@ -264,7 +323,19 @@ export default function ProductForm() {
 
       {!isEdit && tab === 'barcode' && (
         <div className="card scan-card">
-          <p className="muted">Enter the barcode number printed on the product packaging.</p>
+          <p className="muted">Scan the barcode with your camera, or enter the number printed on the product packaging.</p>
+          {!camScanning ? (
+            <button type="button" className="btn btn-primary" onClick={startCameraScan}>
+              📷 Scan with camera
+            </button>
+          ) : (
+            <div className="cam-wrap">
+              <div id={camRegionId} className="cam-region" />
+              <button type="button" className="btn" onClick={stopCameraScan}>
+                Cancel scan
+              </button>
+            </div>
+          )}
           <form onSubmit={handleBarcodeLookup} className="barcode-row">
             <input
               type="text"
