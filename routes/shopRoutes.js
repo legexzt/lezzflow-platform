@@ -9,6 +9,7 @@ const {
 } = require('../controllers/shopController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
+const { cacheMiddleware } = require('../middleware/cache');
 
 // Optional auth for listShops so mine=true works for authenticated sellers
 const optionalAuth = (req, res, next) => {
@@ -18,9 +19,9 @@ const optionalAuth = (req, res, next) => {
   next();
 };
 
-router.get('/', optionalAuth, listShops);
+router.get('/', optionalAuth, cacheMiddleware, listShops);
 router.post('/', authenticateToken, requireRole('seller'), createShop);
-router.get('/:id', getShopById);
+router.get('/:id', cacheMiddleware, getShopById);
 router.put('/:id', authenticateToken, requireRole('seller'), updateShop);
 router.delete('/:id', authenticateToken, requireRole('seller'), deleteShop);
 

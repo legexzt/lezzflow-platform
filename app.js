@@ -5,6 +5,7 @@ const path = require('path');
 const fs = require('fs');
 
 const { apiLimiter } = require('./middleware/rateLimiter');
+const { cacheInvalidator } = require('./middleware/cache');
 const errorHandler = require('./middleware/errorHandler');
 const apiRoutes = require('./routes');
 
@@ -24,6 +25,9 @@ app.use(cors());
 
 // Rate limiter
 app.use(apiLimiter);
+
+// Cache invalidator for mutation routes
+app.use(cacheInvalidator);
 
 // Body parsers
 app.use(express.json());

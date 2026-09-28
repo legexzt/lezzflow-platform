@@ -9,10 +9,11 @@ const {
 } = require('../controllers/productController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
+const { cacheMiddleware } = require('../middleware/cache');
 
-router.get('/', listProducts);
+router.get('/', cacheMiddleware, listProducts);
 router.post('/', authenticateToken, requireRole('seller'), createProduct);
-router.get('/:id', getProductById);
+router.get('/:id', cacheMiddleware, getProductById);
 router.put('/:id', authenticateToken, requireRole('seller'), updateProduct);
 router.delete('/:id', authenticateToken, requireRole('seller'), deleteProduct);
 

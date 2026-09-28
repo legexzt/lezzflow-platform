@@ -2,6 +2,7 @@ const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 const dbConfig = require('../config/db');
+const cache = require('../services/cache');
 
 let activePool = null;
 
@@ -10,6 +11,9 @@ function createRealPool() {
     return new Pool({
       connectionString: dbConfig.connectionString,
       ssl: dbConfig.ssl,
+      max: 10,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
     });
   }
   return new Pool({
@@ -19,6 +23,9 @@ function createRealPool() {
     password: dbConfig.password,
     database: dbConfig.database,
     ssl: dbConfig.ssl,
+    max: 10,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: 5000,
   });
 }
 
@@ -52,14 +59,25 @@ function setPool(customPool) {
 
 function resetTestDb() {
   if (process.env.NODE_ENV === 'test') {
+    cache.clear();
     activePool = createMemPool();
     return activePool;
   }
 }
 
 const query = async (text, params) => {
-  const pool = getPool();
-  return pool.query(text, params);
+  const start = Date.now();
+  try {
+    const pool = getPool();
+    return await pool.query(text, params);
+  } finally {
+    const duration = Date.now() - start;
+    if (duration > 500 && process.env.NODE_ENV !== 'test') {
+      const sqlText = typeof text === 'string' ? text : (text && text.text ? text.text : String(text));
+      const truncated = sqlText.slice(0, 120);
+      console.warn(`[slow-query] ${duration}ms :: ${truncated}`);
+    }
+  }
 };
 
 const getClient = async () => {
