@@ -39,6 +39,7 @@ services:
       AWS_SECRET_ACCESS_KEY: ${AWS_SECRET_ACCESS_KEY:-}
       BEDROCK_MODEL_ID: ${BEDROCK_MODEL_ID:-moonshotai.kimi-k3}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
+      AWS_S3_BUCKET: ${AWS_S3_BUCKET:-}
     depends_on:
       postgres:
         condition: service_healthy
