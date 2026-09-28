@@ -35,12 +35,19 @@ function createMemPool() {
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   for (const file of files) {
-    const sql = fs.readFileSync(path.join(migrationsDir, file), 'utf8');
+    const filePath = path.join(migrationsDir, file);
+    const sql = fs.readFileSync(filePath, 'utf8');
+    // Skip migrations that are not compatible with pg-mem
+    const firstFiveLines = sql.split('\n').slice(0, 5).join('\n');
+    if (firstFiveLines.includes('SKIP-PGMEM')) {
+      continue;
+    }
     memDb.public.none(sql);
   }
   const { Pool: MemPool } = memDb.adapters.createPg();
   return new MemPool();
 }
+
 
 function getPool() {
   if (!activePool) {

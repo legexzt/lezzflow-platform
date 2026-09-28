@@ -3,37 +3,66 @@ const { query } = require('../db');
 /**
  * GET /api/products
  * List products with optional filters: shop_id, category, search
+ * Supports optional cursor pagination: ?limit=N&cursor=<id>
+ * When limit/cursor absent: returns plain array (backward compatible).
+ * When provided: returns { data, next_cursor, has_more }.
  */
 async function listProducts(req, res, next) {
   try {
-    const { shop_id, category, search } = req.query;
+    const { shop_id, category, search, limit: limitParam, cursor: cursorParam } = req.query;
 
-    let sql = 'SELECT * FROM products WHERE 1=1';
+    const usePagination = limitParam !== undefined || cursorParam !== undefined;
+
+    const conditions = ['1=1'];
     const params = [];
 
     if (shop_id) {
       params.push(parseInt(shop_id, 10));
-      sql += ` AND shop_id = $${params.length}`;
+      conditions.push(`shop_id = $${params.length}`);
     }
 
     if (category) {
       params.push(category);
-      sql += ` AND category = $${params.length}`;
+      conditions.push(`category = $${params.length}`);
     }
 
     if (search) {
       params.push(`%${search}%`);
-      sql += ` AND name ILIKE $${params.length}`;
+      conditions.push(`name ILIKE $${params.length}`);
     }
 
-    sql += ' ORDER BY id DESC';
+    if (!usePagination) {
+      // Legacy path: return plain array exactly as before
+      const sql = `SELECT * FROM products WHERE ${conditions.join(' AND ')} ORDER BY id DESC`;
+      const result = await query(sql, params);
+      return res.json(result.rows);
+    }
+
+    // Paginated path
+    const limit = Math.min(parseInt(limitParam, 10) || 50, 100);
+    const cursor = cursorParam ? parseInt(cursorParam, 10) : null;
+
+    if (cursor !== null) {
+      params.push(cursor);
+      conditions.push(`id < $${params.length}`);
+    }
+
+    // Fetch one extra to determine has_more
+    params.push(limit + 1);
+    const sql = `SELECT * FROM products WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT $${params.length}`;
 
     const result = await query(sql, params);
-    return res.json(result.rows);
+    const rows = result.rows;
+    const has_more = rows.length > limit;
+    const data = has_more ? rows.slice(0, limit) : rows;
+    const next_cursor = has_more ? data[data.length - 1].id : null;
+
+    return res.json({ data, next_cursor, has_more });
   } catch (error) {
     next(error);
   }
 }
+
 
 /**
  * POST /api/products

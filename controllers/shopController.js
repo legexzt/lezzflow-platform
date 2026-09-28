@@ -3,30 +3,70 @@ const { query } = require('../db');
 /**
  * GET /api/shops
  * List shops. If query mine=true and authenticated as seller, return seller's shops.
+ * Supports optional cursor pagination: ?limit=N&cursor=<id>
+ * When limit/cursor absent: returns plain array (backward compatible).
+ * When provided: returns { data, next_cursor, has_more }.
  */
 async function listShops(req, res, next) {
   try {
-    const { mine, is_open } = req.query;
+    const { mine, is_open, limit: limitParam, cursor: cursorParam } = req.query;
 
     if (mine === 'true' && req.user) {
       const result = await query('SELECT * FROM shops WHERE seller_id = $1 ORDER BY id DESC', [req.user.id]);
       return res.json(result.rows);
     }
 
-    let sql = 'SELECT * FROM shops';
+    // Cursor pagination: opt-in only when at least one param is provided
+    const usePagination = limitParam !== undefined || cursorParam !== undefined;
+
+    if (!usePagination) {
+      // Legacy path: return plain array exactly as before
+      let sql = 'SELECT * FROM shops';
+      const params = [];
+      if (is_open !== undefined) {
+        params.push(is_open === 'true');
+        sql += ' WHERE is_open = $1';
+      }
+      sql += ' ORDER BY id DESC';
+
+      const result = await query(sql, params);
+      return res.json(result.rows);
+    }
+
+    // Paginated path
+    const limit = Math.min(parseInt(limitParam, 10) || 50, 100);
+    const cursor = cursorParam ? parseInt(cursorParam, 10) : null;
+
     const params = [];
+    const conditions = [];
+
     if (is_open !== undefined) {
       params.push(is_open === 'true');
-      sql += ' WHERE is_open = $1';
+      conditions.push(`is_open = $${params.length}`);
     }
-    sql += ' ORDER BY id DESC';
+
+    if (cursor !== null) {
+      params.push(cursor);
+      conditions.push(`id < $${params.length}`);
+    }
+
+    const where = conditions.length > 0 ? 'WHERE ' + conditions.join(' AND ') : '';
+    // Fetch one extra to determine has_more
+    params.push(limit + 1);
+    const sql = `SELECT * FROM shops ${where} ORDER BY id DESC LIMIT $${params.length}`;
 
     const result = await query(sql, params);
-    return res.json(result.rows);
+    const rows = result.rows;
+    const has_more = rows.length > limit;
+    const data = has_more ? rows.slice(0, limit) : rows;
+    const next_cursor = has_more ? data[data.length - 1].id : null;
+
+    return res.json({ data, next_cursor, has_more });
   } catch (error) {
     next(error);
   }
 }
+
 
 /**
  * POST /api/shops

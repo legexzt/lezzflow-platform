@@ -7,9 +7,16 @@ const fs = require('fs');
 const { apiLimiter } = require('./middleware/rateLimiter');
 const { cacheInvalidator } = require('./middleware/cache');
 const errorHandler = require('./middleware/errorHandler');
+const { apiVersionHeader, v1ErrorHandler } = require('./middleware/apiVersion');
 const apiRoutes = require('./routes');
 
 const app = express();
+
+// Trust proxy chain: Cloudflare edge -> nginx -> node (2 hops).
+// Required so req.ip is the real client IP for express-rate-limit;
+// without this, ALL users share one rate-limit bucket and the API
+// flaps 200/429 under normal multi-app traffic (incident 2026-09-28).
+app.set('trust proxy', 2);
 
 // Ensure uploads folder exists
 const uploadDir = path.resolve(process.env.UPLOAD_DIR || path.join(__dirname, 'uploads'));
@@ -44,6 +51,10 @@ app.get('/health', (req, res) => {
     timestamp: new Date().toISOString(),
   });
 });
+
+// API v1 routes (mounted BEFORE /api for proper prefix-match priority)
+// Adds X-API-Version: v1 header and uses v1-scoped error envelope
+app.use('/api/v1', apiVersionHeader, apiRoutes, v1ErrorHandler);
 
 // API routes mounted at /api
 app.use('/api', apiRoutes);

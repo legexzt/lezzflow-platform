@@ -44,14 +44,21 @@ function groupShopsByDistance(shops, userLat, userLng) {
   }
 
   for (const shop of shops) {
-    const shopLat = parseFloat(shop.lat);
-    const shopLng = parseFloat(shop.lng);
+    let distance;
+    if (shop.distance_km !== undefined && shop.distance_km !== null && !isNaN(parseFloat(shop.distance_km))) {
+      // PostGIS already computed the distance; use it directly
+      distance = parseFloat(shop.distance_km);
+    } else {
+      const shopLat = parseFloat(shop.lat);
+      const shopLng = parseFloat(shop.lng);
 
-    if (isNaN(shopLat) || isNaN(shopLng)) {
-      continue;
+      if (isNaN(shopLat) || isNaN(shopLng)) {
+        continue;
+      }
+
+      distance = haversineDistance(parsedLat, parsedLng, shopLat, shopLng);
     }
 
-    const distance = haversineDistance(parsedLat, parsedLng, shopLat, shopLng);
     const shopWithDistance = {
       ...shop,
       distance_km: Math.round(distance * 100) / 100,
@@ -73,6 +80,7 @@ function groupShopsByDistance(shops, userLat, userLng) {
 
   return layers;
 }
+
 
 module.exports = {
   haversineDistance,

@@ -1,6 +1,23 @@
 const { query } = require('../db');
 const { groupShopsByDistance } = require('../services/distanceService');
 
+// Lazy, cached PostGIS availability flag (module scope)
+let postgisAvailable = null;
+
+async function isPostgisAvailable() {
+  if (postgisAvailable !== null) {
+    return postgisAvailable;
+  }
+  try {
+    const result = await query("SELECT 1 FROM pg_extension WHERE extname = 'postgis'");
+    postgisAvailable = result.rows.length > 0;
+  } catch (_err) {
+    // pg-mem or any other error means PostGIS is unavailable
+    postgisAvailable = false;
+  }
+  return postgisAvailable;
+}
+
 /**
  * GET /api/discover?lat=&lng=
  * Returns open shops grouped into distance layers: { within5km: [], within10km: [], within20km: [] }
@@ -24,9 +41,31 @@ async function discoverShops(req, res, next) {
       });
     }
 
-    // Only discover open shops
-    const result = await query('SELECT * FROM shops WHERE is_open = true');
-    const shops = result.rows;
+    const hasPostgis = await isPostgisAvailable();
+    let shops;
+
+    if (hasPostgis) {
+      // PostGIS path: single query that filters within 20 km and returns distance
+      // ST_MakePoint takes (lng, lat)
+      const result = await query(
+        `SELECT s.*, ST_Distance(s.geog, r.ref)::float / 1000 AS distance_km
+         FROM shops s,
+              (SELECT ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography AS ref) r
+         WHERE s.is_open = true
+           AND s.geog IS NOT NULL
+           AND ST_DWithin(s.geog, r.ref, 20000)
+         ORDER BY s.geog <-> r.ref`,
+        [parsedLng, parsedLat]
+      );
+      shops = result.rows;
+      // Strip the raw PostGIS geography value (EWKB hex) so the API shape
+      // stays identical to the fallback path and no internal column leaks.
+      shops = shops.map(({ geog, ...rest }) => rest);
+    } else {
+      // Fallback: plain SQL, JS-side haversine grouping
+      const result = await query('SELECT * FROM shops WHERE is_open = true');
+      shops = result.rows;
+    }
 
     const layers = groupShopsByDistance(shops, parsedLat, parsedLng);
 

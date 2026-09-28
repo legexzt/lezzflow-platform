@@ -175,28 +175,35 @@ async function updateDeliveryRequestStatus(req, res, next) {
       updatedResult = await query(
         `UPDATE delivery_requests
          SET status = $1, partner_id = $2, pickup_otp = $3, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $4
+         WHERE id = $4 AND status = $5
          RETURNING *`,
-        [targetStatus, partnerIdToSet, pickupOtp, id]
+        [targetStatus, partnerIdToSet, pickupOtp, id, currentStatus]
       );
     } else if (targetStatus === 'picked') {
       const deliveryOtp = String(crypto.randomInt(1000, 10000));
       updatedResult = await query(
         `UPDATE delivery_requests
          SET status = $1, delivery_otp = $2, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $3
+         WHERE id = $3 AND status = $4
          RETURNING *`,
-        [targetStatus, deliveryOtp, id]
+        [targetStatus, deliveryOtp, id, currentStatus]
       );
     } else {
       updatedResult = await query(
         `UPDATE delivery_requests
          SET status = $1, updated_at = CURRENT_TIMESTAMP
-         WHERE id = $2
+         WHERE id = $2 AND status = $3
          RETURNING *`,
-        [targetStatus, id]
+        [targetStatus, id, currentStatus]
       );
     }
+
+    if (updatedResult.rowCount === 0) {
+      return res.status(409).json({
+        error: 'Delivery request status changed concurrently',
+      });
+    }
+
 
     // Sync order status
     let correspondingOrderStatus = null;
