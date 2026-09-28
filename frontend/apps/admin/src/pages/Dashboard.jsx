@@ -43,13 +43,15 @@ export default function Dashboard() {
   const [stripFailed, setStripFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // null = not loaded / fetch failed (hide section); number = bps value
+  const [commissionBps, setCommissionBps] = useState(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
     setStripFailed(false);
 
-    const [statsRes, placedRes, packedRes, shopsRes, productsRes, deliveryRes] =
+    const [statsRes, placedRes, packedRes, shopsRes, productsRes, deliveryRes, configRes] =
       await Promise.allSettled([
         api.get('/admin/stats'),
         api.get('/admin/orders', { params: { status: 'placed', limit: 100 } }),
@@ -57,12 +59,21 @@ export default function Dashboard() {
         api.get('/admin/shops', { params: { limit: 100 } }),
         api.get('/admin/products', { params: { limit: 100 } }),
         api.get('/delivery/requests'),
+        api.get('/v1/config'),
       ]);
 
     if (statsRes.status === 'fulfilled') {
       setStats(statsRes.value?.data || {});
     } else {
       setError(errMsg(statsRes.reason, 'Could not load platform stats.'));
+    }
+
+    // Commission config (public key, admin can read/write it)
+    if (configRes.status === 'fulfilled') {
+      const bps = configRes.value?.data?.commission_bps;
+      setCommissionBps(Number.isInteger(bps) && bps >= 0 ? bps : null);
+    } else {
+      setCommissionBps(null);
     }
 
     let hasFailure = false;
@@ -220,6 +231,20 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+
+      {commissionBps !== null && (
+        <section className="commission-section">
+          <h2>Pricing & commission</h2>
+          <div className="attention-tile">
+            <span className="attention-icon"><Icon name="chart" size={22} /></span>
+            <span className="attention-label">
+              {commissionBps === 0
+                ? '₹0 commission during beta. Future pricing will be published transparently before activation.'
+                : `${commissionBps / 100}% commission. Future pricing will be published transparently before activation.`}
+            </span>
+          </div>
+        </section>
+      )}
 
       {cards.length === 0 ? (
         <EmptyState message="No stats available yet." />

@@ -1,9 +1,11 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../AuthContext.jsx'
 import { signOutUser } from '../firebase.js'
 import Icon from '../components/Icon.jsx'
+import api from '../api.js'
 
-const SUPPORT_ITEMS = [
+const STATIC_SUPPORT_ITEMS = [
   {
     title: 'How LezzFlow works',
     body: 'Customers near your shop discover you on the Mart app, place orders for delivery or pickup, and you get instant order alerts. Keep your inventory updated and your shop marked open.',
@@ -22,8 +24,29 @@ const SUPPORT_ITEMS = [
   },
 ]
 
+const BETA_COMMISSION_SENTENCE =
+  '₹0 commission during beta. Future pricing will be published transparently before activation.'
+
+function commissionBody(bps) {
+  if (bps === 0) return BETA_COMMISSION_SENTENCE
+  return `${bps / 100}% commission. Future pricing will be published transparently before activation.`
+}
+
 export default function Settings() {
   const { user } = useAuth()
+  const [commissionBps, setCommissionBps] = useState(0)
+
+  useEffect(() => {
+    api
+      .get('/v1/config')
+      .then((res) => {
+        const bps = res.data?.commission_bps ?? 0
+        setCommissionBps(bps)
+      })
+      .catch(() => {
+        // Offline or error — keep the default 0 (beta sentence)
+      })
+  }, [])
 
   return (
     <div className="page">
@@ -46,7 +69,10 @@ export default function Settings() {
       <div className="card">
         <h3><Icon name="help" size={18} /> Customer Support</h3>
         <div className="support-list">
-          {SUPPORT_ITEMS.map((item) => (
+          {[
+            ...STATIC_SUPPORT_ITEMS,
+            { title: 'Commission & pricing', body: commissionBody(commissionBps) },
+          ].map((item) => (
             <details key={item.title} className="support-item">
               <summary>{item.title}</summary>
               <p className="muted">{item.body}</p>
