@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import ShopMap from '../components/ShopMap.jsx';
-import { formatDistance, cacheCustomerPosition } from '../shopUtils';
+import { formatDistance, cacheCustomerPosition, getCustomerPosition } from '../shopUtils';
 import Icon from '../components/Icon.jsx';
 
 const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru fallback until GPS resolves
@@ -101,10 +101,22 @@ export default function Home() {
     );
   }, [fetchDiscovery]);
 
-  // Try to locate on first load.
+  // Try cached position first (survives reloads); fall back to live GPS.
   useEffect(() => {
-    locate();
-  }, [locate]);
+    let cancelled = false;
+    getCustomerPosition().then((pos) => {
+      if (cancelled) return;
+      if (pos && Number.isFinite(pos.lat) && Number.isFinite(pos.lng)) {
+        setPosition([pos.lat, pos.lng]);
+        fetchDiscovery(pos.lat, pos.lng);
+      } else {
+        locate();
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [locate, fetchDiscovery]);
 
   const applyManualLocation = useCallback(
     (lat, lng) => {
