@@ -1,7 +1,9 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../AuthContext.jsx'
 import { signOutUser } from '../firebase.js'
 import Icon from '../components/Icon.jsx'
+import api from '../api.js'
 import { useAlertCtx } from '../components/OrderAlertHost.jsx'
 
 const SUPPORT_ITEMS = [
@@ -29,6 +31,21 @@ const PACK_MINS = [10, 15, 20]
 export default function More() {
   const { user } = useAuth()
   const alertCtx = useAlertCtx()
+
+  // Live commission config (Item 3): 0 bps during beta.
+  const [commissionBps, setCommissionBps] = useState(0)
+  useEffect(() => {
+    api
+      .get('/v1/config')
+      .then((res) => setCommissionBps(res.data?.commission_bps ?? 0))
+      .catch(() => {
+        // Offline or error — keep the default 0 (beta sentence)
+      })
+  }, [])
+  const commissionSentence =
+    commissionBps === 0
+      ? '₹0 commission during beta. Future pricing will be published transparently before activation.'
+      : `${commissionBps / 100}% commission. Future pricing will be published transparently before activation.`
 
   // alertCtx may be null if OrderAlertHost isn't wrapping (safety guard)
   const soundOn = alertCtx?.soundOn ?? true
@@ -189,6 +206,11 @@ export default function More() {
             <span className="badge badge-green">On</span>
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <h3><Icon name="money" size={18} /> Pricing &amp; commission</h3>
+        <p className="muted">{commissionSentence}</p>
       </div>
 
       <div className="card">
