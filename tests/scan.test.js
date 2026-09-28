@@ -164,4 +164,71 @@ describe('Scan Endpoints (AI & Barcode) Mocked Tests', () => {
       expect(res.body).toEqual({ found: false });
     });
   });
+
+  describe('Bedrock AbortController Timeout Tests', () => {
+    const fakeImageBuffer = Buffer.from('fake-jpeg-image-bytes');
+
+    it('should pass abortSignal as the second argument to bedrockClient.send', async () => {
+      const mockBedrockResponse = {
+        output: {
+          message: {
+            content: [{ text: JSON.stringify({ name: 'Test', category: 'Cat', description: 'Desc' }) }],
+          },
+        },
+      };
+
+      const sendMock = jest.spyOn(bedrockClient, 'send').mockResolvedValue(mockBedrockResponse);
+
+      await request(app)
+        .post('/api/scan/ai')
+        .attach('image', fakeImageBuffer, { filename: 'test.jpg', contentType: 'image/jpeg' });
+
+      expect(sendMock).toHaveBeenCalledTimes(1);
+      const [, secondArg] = sendMock.mock.calls[0];
+      expect(secondArg).toBeDefined();
+      expect(secondArg).toHaveProperty('abortSignal');
+      expect(secondArg.abortSignal).toBeInstanceOf(AbortSignal);
+    });
+
+    it('should reject with a timeout error when send never resolves', async () => {
+      const originalTimeout = process.env.BEDROCK_TIMEOUT_MS;
+      process.env.BEDROCK_TIMEOUT_MS = '50';
+
+      jest.spyOn(bedrockClient, 'send').mockReturnValue(new Promise(() => {}));
+
+      const res = await request(app)
+        .post('/api/scan/ai')
+        .attach('image', fakeImageBuffer, { filename: 'slow.jpg', contentType: 'image/jpeg' });
+
+      expect(res.status).toBe(502);
+      expect(res.body.error).toContain('AI product scanner failed');
+      expect(res.body.details).toContain('AI product scan timed out after 50ms');
+
+      process.env.BEDROCK_TIMEOUT_MS = originalTimeout !== undefined ? originalTimeout : '';
+      if (originalTimeout === undefined) {
+        delete process.env.BEDROCK_TIMEOUT_MS;
+      }
+    }, 5000);
+
+    it('should not leave lingering timers when send resolves successfully', async () => {
+      const mockBedrockResponse = {
+        output: {
+          message: {
+            content: [{ text: JSON.stringify({ name: 'Quick', category: 'Cat', description: 'Fast response' }) }],
+          },
+        },
+      };
+
+      jest.spyOn(bedrockClient, 'send').mockResolvedValue(mockBedrockResponse);
+
+      const clearTimeoutSpy = jest.spyOn(global, 'clearTimeout');
+
+      await request(app)
+        .post('/api/scan/ai')
+        .attach('image', fakeImageBuffer, { filename: 'quick.jpg', contentType: 'image/jpeg' });
+
+      // clearTimeout must have been called (the finally block ran)
+      expect(clearTimeoutSpy).toHaveBeenCalled();
+    });
+  });
 });

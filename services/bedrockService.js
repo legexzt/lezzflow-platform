@@ -82,7 +82,26 @@ Do NOT include markdown formatting, backticks, or other text outside the JSON.`;
     },
   });
 
-  const response = await bedrockClient.send(command);
+  const timeoutMs = parseInt(process.env.BEDROCK_TIMEOUT_MS, 10) || 25000;
+  const controller = new AbortController();
+
+  let timeoutId;
+  const timeoutPromise = new Promise((_, reject) => {
+    timeoutId = setTimeout(() => {
+      controller.abort();
+      reject(new Error(`AI product scan timed out after ${timeoutMs}ms`));
+    }, timeoutMs);
+  });
+
+  let response;
+  try {
+    response = await Promise.race([
+      bedrockClient.send(command, { abortSignal: controller.signal }),
+      timeoutPromise,
+    ]);
+  } finally {
+    clearTimeout(timeoutId);
+  }
 
   const contentList = response.output?.message?.content;
   if (!contentList || !contentList.length || !contentList[0].text) {
