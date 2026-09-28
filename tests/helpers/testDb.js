@@ -17,12 +17,12 @@ async function createTestUser({ firebase_uid, role = 'customer', name = 'Test Us
   return result.rows[0];
 }
 
-async function createTestShop({ seller_id, name = 'Test Shop', address = '123 Market St', lat = 12.9716, lng = 77.5946, is_open = true }) {
+async function createTestShop({ seller_id, name = 'Test Shop', address = '123 Market St', lat = 12.9716, lng = 77.5946, is_open = true, is_live = true, open_time = null, close_time = null, category = null }) {
   const result = await query(
-    `INSERT INTO shops (seller_id, name, address, lat, lng, is_open)
-     VALUES ($1, $2, $3, $4, $5, $6)
+    `INSERT INTO shops (seller_id, name, address, lat, lng, is_open, is_live, open_time, close_time, category)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING *`,
-    [seller_id, name, address, lat, lng, is_open]
+    [seller_id, name, address, lat, lng, is_open, is_live, open_time, close_time, category]
   );
   return result.rows[0];
 }

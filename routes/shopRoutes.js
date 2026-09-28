@@ -6,6 +6,7 @@ const {
   getShopById,
   updateShop,
   deleteShop,
+  goLiveShop,
 } = require('../controllers/shopController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
@@ -21,6 +22,7 @@ const optionalAuth = (req, res, next) => {
 
 router.get('/', optionalAuth, cacheMiddleware, listShops);
 router.post('/', authenticateToken, requireRole('seller'), createShop);
+router.post('/:id/go-live', authenticateToken, requireRole('seller'), goLiveShop);
 router.get('/:id', cacheMiddleware, getShopById);
 router.put('/:id', authenticateToken, requireRole('seller'), updateShop);
 router.delete('/:id', authenticateToken, requireRole('seller'), deleteShop);

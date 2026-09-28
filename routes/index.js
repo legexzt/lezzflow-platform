@@ -13,6 +13,8 @@ const scanRoutes = require('./scanRoutes');
 const uploadRoutes = require('./uploadRoutes');
 const advisoryRoutes = require('./advisoryRoutes');
 const partnerRoutes = require('./partnerRoutes');
+const onboardingRoutes = require('./onboardingRoutes');
+const configRoutes = require('./configRoutes');
 
 // Mount sub-routes under /api
 router.use('/auth', authRoutes);
@@ -24,9 +26,11 @@ router.use('/delivery', deliveryRoutes);
 router.use('/partner', partnerRoutes);
 router.use('/admin', adminRoutes);
 router.use('/', kycRoutes); // /api/kyc, /api/admin/kyc/...
+router.use('/', configRoutes); // /api/config, /api/admin/config
 router.use('/scan', scanRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/advisory', advisoryRoutes);
+router.use('/onboarding', onboardingRoutes); // /api/v1/onboarding/funnel-event
 
 // Payment coming soon endpoint
 router.get('/payment', (req, res) => {

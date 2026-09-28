@@ -74,7 +74,7 @@ async function listShops(req, res, next) {
  */
 async function createShop(req, res, next) {
   try {
-    const { name, address, lat, lng, is_open } = req.body;
+    const { name, address, lat, lng, is_open, open_time, close_time, category } = req.body;
 
     if (!name || lat === undefined || lng === undefined) {
       return res.status(400).json({ error: 'Shop name, lat, and lng are required' });
@@ -87,11 +87,26 @@ async function createShop(req, res, next) {
       return res.status(400).json({ error: 'lat and lng must be valid numbers' });
     }
 
+    const timeError = validateTime(open_time, 'open_time') || validateTime(close_time, 'close_time');
+    if (timeError) {
+      return res.status(400).json({ error: timeError });
+    }
+
     const result = await query(
-      `INSERT INTO shops (seller_id, name, address, lat, lng, is_open)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO shops (seller_id, name, address, lat, lng, is_open, open_time, close_time, category)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING *`,
-      [req.user.id, name, address || null, parsedLat, parsedLng, is_open !== undefined ? is_open : true]
+      [
+        req.user.id,
+        name,
+        address || null,
+        parsedLat,
+        parsedLng,
+        is_open !== undefined ? is_open : true,
+        open_time || null,
+        close_time || null,
+        category || null,
+      ]
     );
 
     return res.status(201).json(result.rows[0]);
@@ -122,11 +137,24 @@ async function getShopById(req, res, next) {
 /**
  * PUT /api/shops/:id
  * Update shop. Seller must own the shop.
+ * NOTE: is_live / isLive cannot be set here anymore — the legacy
+ * PUT { isLive: true } path is obsolete. Use POST /api/v1/shops/:id/go-live.
  */
 async function updateShop(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, address, lat, lng, is_open } = req.body;
+    const { name, address, lat, lng, is_open, open_time, close_time, category } = req.body;
+
+    if (req.body.isLive !== undefined || req.body.is_live !== undefined) {
+      return res.status(400).json({
+        error: 'is_live cannot be set directly. Use POST /api/v1/shops/:id/go-live to take a shop live.',
+      });
+    }
+
+    const timeError = validateTime(open_time, 'open_time') || validateTime(close_time, 'close_time');
+    if (timeError) {
+      return res.status(400).json({ error: timeError });
+    }
 
     const existing = await query('SELECT * FROM shops WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
@@ -143,19 +171,37 @@ async function updateShop(req, res, next) {
     const updatedLat = lat !== undefined ? parseFloat(lat) : shop.lat;
     const updatedLng = lng !== undefined ? parseFloat(lng) : shop.lng;
     const updatedIsOpen = is_open !== undefined ? is_open : shop.is_open;
+    const updatedOpenTime = open_time !== undefined ? open_time || null : shop.open_time;
+    const updatedCloseTime = close_time !== undefined ? close_time || null : shop.close_time;
+    const updatedCategory = category !== undefined ? category || null : shop.category;
 
     const result = await query(
       `UPDATE shops
-       SET name = $1, address = $2, lat = $3, lng = $4, is_open = $5, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $6
+       SET name = $1, address = $2, lat = $3, lng = $4, is_open = $5,
+           open_time = $6, close_time = $7, category = $8,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $9
        RETURNING *`,
-      [updatedName, updatedAddress, updatedLat, updatedLng, updatedIsOpen, id]
+      [updatedName, updatedAddress, updatedLat, updatedLng, updatedIsOpen, updatedOpenTime, updatedCloseTime, updatedCategory, id]
     );
 
     return res.json(result.rows[0]);
   } catch (error) {
     next(error);
   }
+}
+
+/**
+ * Validates an optional HH:MM(:SS) time string. Returns an error message or null.
+ */
+function validateTime(value, field) {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+  if (typeof value !== 'string' || !/^([01]\d|2[0-3]):[0-5]\d(:[0-5]\d)?$/.test(value)) {
+    return `${field} must be a valid time in HH:MM format`;
+  }
+  return null;
 }
 
 /**
@@ -183,10 +229,80 @@ async function deleteShop(req, res, next) {
   }
 }
 
+/**
+ * POST /api/v1/shops/:id/go-live
+ * Marks a shop live (visible in mart discovery). Shop owner only (admins allowed).
+ * Gate: profile complete (name + address) AND at least 1 product.
+ * Idempotent: already-live shops return 200 with already_live: true.
+ */
+async function goLiveShop(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const existing = await query('SELECT * FROM shops WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'Shop not found' });
+    }
+
+    const shop = existing.rows[0];
+    if (shop.seller_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: You do not own this shop' });
+    }
+
+    if (shop.is_live) {
+      return res.status(200).json({ ...shop, already_live: true });
+    }
+
+    const reasons = [];
+
+    if (!shop.name || !String(shop.name).trim()) {
+      reasons.push('Shop name is missing');
+    }
+
+    if (!shop.address || !String(shop.address).trim()) {
+      reasons.push('Shop address is missing');
+    }
+
+    const productCount = await query(
+      'SELECT COUNT(*)::int AS count FROM products WHERE shop_id = $1',
+      [id]
+    );
+    if (productCount.rows[0].count === 0) {
+      reasons.push('At least 1 product is required to go live');
+    }
+
+    if (reasons.length > 0) {
+      return res.status(422).json({
+        error: 'Shop is not ready to go live',
+        reasons,
+      });
+    }
+
+    const updated = await query(
+      `UPDATE shops
+       SET is_live = true, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1
+       RETURNING *`,
+      [id]
+    );
+
+    await query(
+      `INSERT INTO onboarding_funnel_events (user_id, step)
+       VALUES ($1, 'go_live')`,
+      [shop.seller_id]
+    );
+
+    return res.status(200).json(updated.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   listShops,
   createShop,
   getShopById,
   updateShop,
   deleteShop,
+  goLiveShop,
 };

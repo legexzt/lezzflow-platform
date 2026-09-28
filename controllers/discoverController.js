@@ -52,6 +52,7 @@ async function discoverShops(req, res, next) {
          FROM shops s,
               (SELECT ST_SetSRID(ST_MakePoint($1, $2), 4326)::geography AS ref) r
          WHERE s.is_open = true
+           AND s.is_live = true
            AND s.geog IS NOT NULL
            AND ST_DWithin(s.geog, r.ref, 20000)
          ORDER BY s.geog <-> r.ref`,
@@ -63,7 +64,7 @@ async function discoverShops(req, res, next) {
       shops = shops.map(({ geog, ...rest }) => rest);
     } else {
       // Fallback: plain SQL, JS-side haversine grouping
-      const result = await query('SELECT * FROM shops WHERE is_open = true');
+      const result = await query('SELECT * FROM shops WHERE is_open = true AND is_live = true');
       shops = result.rows;
     }
 
