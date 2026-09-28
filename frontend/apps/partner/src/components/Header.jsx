@@ -1,8 +1,10 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext';
+import { useLang } from '../i18n.jsx';
 
 export default function Header() {
   const { firebaseUser, signOut } = useAuth();
+  const { lang, setLang, t } = useLang();
   const [logoOk, setLogoOk] = useState(true);
 
   return (
@@ -20,9 +22,17 @@ export default function Header() {
         )}
         <span className="app-tag">Partner</span>
         <span className="flex-spacer" />
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm lang-toggle"
+          onClick={() => setLang(lang === 'hi' ? 'en' : 'hi')}
+          aria-label="Switch language / भाषा बदलें"
+        >
+          {lang === 'hi' ? 'EN' : 'हिं'}
+        </button>
         {firebaseUser ? (
           <button type="button" className="btn btn-ghost btn-sm" onClick={signOut}>
-            Sign out
+            {t('signOut')}
           </button>
         ) : null}
       </div>

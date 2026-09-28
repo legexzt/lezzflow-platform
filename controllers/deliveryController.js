@@ -46,7 +46,7 @@ async function listDeliveryRequests(req, res, next) {
     let result;
     if (req.user.role === 'admin') {
       result = await query(
-        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, o.status as order_status, s.name as shop_name, s.address as shop_address
          FROM delivery_requests dr
          JOIN orders o ON dr.order_id = o.id
          JOIN shops s ON o.shop_id = s.id
@@ -54,7 +54,7 @@ async function listDeliveryRequests(req, res, next) {
       );
     } else if (isOffDuty) {
       result = await query(
-        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, o.status as order_status, s.name as shop_name, s.address as shop_address
          FROM delivery_requests dr
          JOIN orders o ON dr.order_id = o.id
          JOIN shops s ON o.shop_id = s.id
@@ -64,7 +64,7 @@ async function listDeliveryRequests(req, res, next) {
       );
     } else {
       result = await query(
-        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, o.status as order_status, s.name as shop_name, s.address as shop_address
          FROM delivery_requests dr
          JOIN orders o ON dr.order_id = o.id
          JOIN shops s ON o.shop_id = s.id
@@ -239,7 +239,86 @@ async function updateDeliveryRequestStatus(req, res, next) {
 module.exports = {
   listDeliveryRequests,
   updateDeliveryRequestStatus,
+  sendSosAlert,
+  listSosAlerts,
   checkPartnerKycApproved,
   isValidDeliveryStatusTransition,
   PARTNER_LEGAL_TRANSITIONS,
 };
+
+/**
+ * POST /api/delivery/sos
+ * Partner (KYC-approved) sends an SOS alert with optional GPS + active delivery.
+ */
+async function sendSosAlert(req, res, next) {
+  try {
+    const isApproved = await checkPartnerKycApproved(req.user.id);
+    if (!isApproved && req.user.role !== 'admin') {
+      return res.status(403).json({
+        error: 'Forbidden: Delivery partner KYC verification must be approved.',
+      });
+    }
+
+    const { lat, lng, delivery_request_id, note } = req.body || {};
+
+    const numOrNull = (v) => {
+      if (v === undefined || v === null || v === '') return null;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : null;
+    };
+    const latN = numOrNull(lat);
+    const lngN = numOrNull(lng);
+    if ((lat !== undefined && lat !== null && lat !== '' && latN === null) ||
+        (lng !== undefined && lng !== null && lng !== '' && lngN === null)) {
+      return res.status(400).json({ error: 'lat/lng must be numbers when provided.' });
+    }
+
+    let drId = null;
+    if (delivery_request_id !== undefined && delivery_request_id !== null && delivery_request_id !== '') {
+      const drIdN = Number(delivery_request_id);
+      if (!Number.isInteger(drIdN)) {
+        return res.status(400).json({ error: 'delivery_request_id must be an integer.' });
+      }
+      const dr = await query('SELECT id, partner_id FROM delivery_requests WHERE id = $1', [drIdN]);
+      if (dr.rows.length === 0) {
+        return res.status(404).json({ error: 'Delivery request not found.' });
+      }
+      if (req.user.role === 'partner' && dr.rows[0].partner_id !== req.user.id) {
+        return res.status(403).json({ error: 'That delivery is not assigned to you.' });
+      }
+      drId = drIdN;
+    }
+
+    const noteStr = typeof note === 'string' ? note.slice(0, 500) : null;
+
+    const result = await query(
+      `INSERT INTO sos_alerts (partner_id, delivery_request_id, lat, lng, note)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING id, partner_id, delivery_request_id, lat, lng, note, status, created_at`,
+      [req.user.id, drId, latN, lngN, noteStr],
+    );
+    return res.status(201).json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/admin/sos-alerts
+ * Admin: latest SOS alerts with partner name, open/acknowledged first.
+ */
+async function listSosAlerts(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT sa.*, u.name AS partner_name
+       FROM sos_alerts sa
+       JOIN users u ON u.id = sa.partner_id
+       WHERE sa.status IN ('open', 'acknowledged')
+       ORDER BY sa.created_at DESC
+       LIMIT 50`,
+    );
+    return res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+}

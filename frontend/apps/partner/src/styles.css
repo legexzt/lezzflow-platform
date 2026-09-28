@@ -1006,3 +1006,168 @@ p {
   margin: 0 auto 0.75rem;
 }
 
+
+/* ---- Partner Cycle-2 additions ---- */
+
+.lang-toggle {
+  margin-right: 0.4rem;
+  min-width: 2.4rem;
+}
+
+/* SOS floating action button */
+.sos-fab {
+  position: fixed;
+  right: 1rem;
+  bottom: 1.25rem;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  border: none;
+  background: #d92d20;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 20px rgba(217, 45, 32, 0.45);
+  cursor: pointer;
+  z-index: 60;
+}
+.sos-fab:active {
+  transform: scale(0.94);
+}
+
+/* Bottom sheet */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 70;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.sheet {
+  background: var(--bg, #fff);
+  width: 100%;
+  max-width: 480px;
+  border-radius: 18px 18px 0 0;
+  padding: 1.1rem 1rem calc(1.25rem + env(safe-area-inset-bottom));
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  max-height: 85vh;
+  overflow-y: auto;
+}
+.sos-option {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  text-decoration: none;
+}
+.sos-disabled {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+  opacity: 0.85;
+}
+.sos-disabled p {
+  margin: 0.2rem 0 0;
+}
+.sos-note {
+  width: 100%;
+  margin-top: 0.5rem;
+  resize: vertical;
+}
+.sos-actions {
+  display: flex;
+  gap: 0.6rem;
+  justify-content: flex-end;
+  margin-top: 0.6rem;
+}
+
+/* One-shop batching */
+.delivery-batch {
+  border-left: 4px solid var(--primary, #f8cb46);
+}
+.batch-drop-list {
+  list-style: none;
+  margin: 0.6rem 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.batch-drop-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.batch-drop-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--line);
+  color: var(--text, #1a1a1a);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+/* Trip checklist (active deliveries grouped by shop) */
+.trip-checklist {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+}
+.trip-stop {
+  display: flex;
+  gap: 0.7rem;
+  align-items: flex-start;
+}
+.trip-stop .batch-drop-num {
+  margin-top: 0.2rem;
+}
+.trip-stop-main {
+  flex: 1;
+  min-width: 0;
+}
+.trip-stop-head {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.3rem;
+}
+
+/* Referral tab */
+.refer-code-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.refer-code {
+  font-size: 1.4rem;
+  letter-spacing: 0.08em;
+  padding: 0.35rem 0.8rem;
+  background: var(--line);
+  border-radius: 10px;
+}
+.refer-input {
+  flex: 1;
+  min-width: 120px;
+  padding: 0.55rem 0.7rem;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  font-size: 1rem;
+  background: var(--bg, #fff);
+  color: inherit;
+}

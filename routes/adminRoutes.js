@@ -4,6 +4,7 @@ const { getAdminStats, listAllShops, listAllOrders, listAllUsers, listAllProduct
 const { listAudit, nudgeOrder, grantOpsViewer, revokeOpsViewer } = require('../controllers/auditController');
 const { getFunnelDropoff } = require('../controllers/onboardingController');
 const { listLocalities, getLocality } = require('../controllers/localityAnalyticsController');
+const { listSosAlerts } = require('../controllers/deliveryController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
 const { requireAdminWrite } = require('../middleware/adminWrite');
@@ -20,6 +21,9 @@ router.get('/analytics/localities/:locality', authenticateToken, requireRole('ad
 
 // Onboarding funnel dropoff (read-only; admin auth)
 router.get('/onboarding/funnel-dropoff', authenticateToken, requireRole('admin'), getFunnelDropoff);
+
+// Partner SOS alerts (read-only; admin auth) — receiving end of the partner SOS FAB
+router.get('/sos-alerts', authenticateToken, requireRole('admin'), listSosAlerts);
 
 // Audit and operations viewer routes
 router.get('/audit', authenticateToken, requireRole('admin'), listAudit);

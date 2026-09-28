@@ -95,4 +95,26 @@ export async function updateMyProfile(updates) {
   return data;
 }
 
+// ---- Partner Config / SOS / Referrals (Cycle-2) ----
+
+export async function fetchPartnerConfig() {
+  const { data } = await api.get('/delivery/config');
+  return data;
+}
+
+export async function sendSos(payload) {
+  const { data } = await api.post('/delivery/sos', payload);
+  return data;
+}
+
+export async function fetchMyReferrals() {
+  const { data } = await api.get('/partner/referrals');
+  return data;
+}
+
+export async function claimReferral(code) {
+  const { data } = await api.post('/partner/referral/claim', { code });
+  return data;
+}
+
 export default api;
