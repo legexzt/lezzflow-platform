@@ -6,8 +6,11 @@ import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
 import { setProductStock } from '../helpers/setProductStock.js'
 
+import { useAuth } from '../AuthContext.jsx'
+
 export default function Products() {
   const toast = useToast()
+  const { loading: authLoading } = useAuth()
   const [shop, setShop] = useState(null)
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
@@ -35,8 +38,9 @@ export default function Products() {
   }, [toast])
 
   useEffect(() => {
+    if (authLoading) return
     load()
-  }, [load])
+  }, [load, authLoading])
 
   async function handleDelete(p) {
     if (!window.confirm(`Delete "${p.name}"? This cannot be undone.`)) return
@@ -127,12 +131,16 @@ export default function Products() {
                 </div>
                 <div className="product-info">
                   <p className="product-name">{p.name}</p>
-                  {p.category && <p className="muted small">{p.category}</p>}
+                  <p className="muted small">{p.category || '—'}</p>
                   <p className="product-meta">
                     <span className="price">₹{p.price}</span>
                     {p.stock != null && <span className="muted small"> · Stock: {p.stock}</span>}
                   </p>
                   <div className="toggle-row">
+                    <span className={`badge ${hasStock ? 'badge-green' : 'badge-grey'}`}>
+                      <Icon name={hasStock ? 'check' : 'warning'} size={12} />
+                      {hasStock ? 'In stock' : 'Out of stock'}
+                    </span>
                     {hasStock ? (
                       <button
                         type="button"
@@ -140,7 +148,7 @@ export default function Products() {
                         onClick={() => handleStockToggle(p)}
                         disabled={isToggling}
                       >
-                        {isToggling ? 'Updating…' : 'Out of stock'}
+                        {isToggling ? 'Updating…' : 'Mark out of stock'}
                       </button>
                     ) : (
                       <button
@@ -149,7 +157,7 @@ export default function Products() {
                         onClick={() => handleStockToggle(p)}
                         disabled={isToggling}
                       >
-                        {isToggling ? 'Updating…' : 'Back in stock'}
+                        {isToggling ? 'Updating…' : 'Restock'}
                       </button>
                     )}
                   </div>

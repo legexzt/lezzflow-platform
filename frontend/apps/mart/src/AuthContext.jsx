@@ -29,16 +29,15 @@ export function AuthProvider({ children }) {
           setRole(null);
         }
       } catch (e) {
-        // Backend verification failed — sign out so the user can retry cleanly.
+        // Backend verification failed — keep the error visible so the user sees
+        // it instead of failing silently. Do NOT sign out here: signOut would
+        // re-trigger onAuthStateChanged(null), which clears the error via
+        // setError(''). The user stays on the login screen and can retry; the
+        // normal logout() flow still signs out as before.
         setError(e.response?.data?.error || e.message || 'Authentication failed.');
         setAuthToken(null);
         setUser(null);
         setRole(null);
-        try {
-          await signOut(auth);
-        } catch {
-          // ignore
-        }
       } finally {
         setLoading(false);
       }

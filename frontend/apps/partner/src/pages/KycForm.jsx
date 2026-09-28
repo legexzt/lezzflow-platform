@@ -90,7 +90,7 @@ export default function KycForm() {
       <Header />
       <main className="container">
         <h1 className="page-title">Partner KYC</h1>
-        <p className="muted">
+        <p className="muted kyc-intro">
           Verify your identity to start delivering. Your details are uploaded securely and are never
           displayed publicly.
         </p>

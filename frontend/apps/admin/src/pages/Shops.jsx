@@ -177,7 +177,7 @@ export default function Shops() {
         )}
         {!loading && !error && (
           <span className="results-count">
-            {shops.length} {shops.length === 1 ? 'shop' : 'shops'}
+            {shops.length}{' '}{shops.length === 1 ? 'shop' : 'shops'}
           </span>
         )}
       </form>

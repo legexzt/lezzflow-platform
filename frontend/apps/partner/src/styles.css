@@ -146,6 +146,12 @@ p {
   color: var(--muted);
 }
 
+/* KYC intro — must always render in full, never truncated */
+.kyc-intro {
+  white-space: normal;
+  overflow: visible;
+}
+
 .tiny {
   font-size: 0.75rem;
 }

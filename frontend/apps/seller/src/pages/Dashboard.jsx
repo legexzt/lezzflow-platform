@@ -16,7 +16,7 @@ function toList(data, key) {
 }
 
 export default function Dashboard() {
-  const { user } = useAuth()
+  const { user, loading: authLoading } = useAuth()
   const toast = useToast()
   const [shop, setShop] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -49,8 +49,12 @@ export default function Dashboard() {
   }, [toast])
 
   useEffect(() => {
+    // Wait until Firebase auth has settled before hitting the API — otherwise
+    // the request goes out with no ID token (401) and flashes a bogus error
+    // toast right after login.
+    if (authLoading) return
     load()
-  }, [load])
+  }, [load, authLoading])
 
   async function toggleOpen() {
     if (!shop || toggling) return
