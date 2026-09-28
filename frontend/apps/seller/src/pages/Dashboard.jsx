@@ -22,8 +22,6 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
   const [counts, setCounts] = useState({ products: 0, orders: 0 })
-  // checklistRef lets the not-live "Finish setup" link scroll to the checklist card
-  const checklistRef = null
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -96,8 +94,11 @@ export default function Dashboard() {
     )
   }
 
-  // §2.3: show info line only when switch is ON but shop is not live
-  const showNotLiveLine = shop.is_open && !shop.isLive && !shop.is_live
+  // Not-live info line: shown ONLY when the backend explicitly reports
+  // is_live === false (the real backend value from the ITEM 1 migration).
+  // Absence of is_live (undefined) means "unknown" — never show a banner then,
+  // so the line can never mislead while the backend is still rolling out.
+  const showNotLiveLine = shop.is_open === true && shop.is_live === false
 
   return (
     <div className="page">
@@ -135,21 +136,15 @@ export default function Dashboard() {
         </Link>
       </div>
 
-      {/* §2.3 not-live info line — only when Open but not yet live */}
+      {/* Not-live info line — only when backend really says is_live === false */}
       {showNotLiveLine && (
         <div className="not-live-info">
           <Icon name="info" size={14} />
           <span>
             Your shop is Open but not live yet — customers can&apos;t see you until you finish setup.{' '}
-            <a
-              href="#checklist"
-              onClick={(e) => {
-                e.preventDefault()
-                document.getElementById('setup-checklist')?.scrollIntoView({ behavior: 'smooth' })
-              }}
-            >
+            <Link to="/onboarding">
               Finish setup
-            </a>
+            </Link>
           </span>
         </div>
       )}

@@ -13,11 +13,13 @@ import Orders from './pages/Orders.jsx'
 import Advisory from './pages/Advisory.jsx'
 import Money from './pages/Money.jsx'
 import More from './pages/More.jsx'
+import Onboarding from './pages/Onboarding.jsx'
 
 export default function App() {
   const { firebaseUser } = useAuth()
   const location = useLocation()
-  const showChrome = !!firebaseUser && location.pathname !== '/login'
+  // Full-screen flow: hide header + bottom nav on login and on the onboarding wizard
+  const showChrome = !!firebaseUser && location.pathname !== '/login' && location.pathname !== '/onboarding'
 
   return (
     <OrderAlertHost>
@@ -35,6 +37,7 @@ export default function App() {
             <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
             <Route path="/money" element={<ProtectedRoute><Money /></ProtectedRoute>} />
             <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
+            <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/settings" element={<Navigate to="/more" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
