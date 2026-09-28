@@ -4,6 +4,10 @@ import api, { getErrorMessage } from '../api.js'
 import { useAuth } from '../AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import Icon from '../components/Icon.jsx'
+import ChecklistCard from '../components/ChecklistCard.jsx'
+import LowStockCard from '../components/LowStockCard.jsx'
+import SlowMoversCard from '../components/SlowMoversCard.jsx'
 
 function toList(data, key) {
   if (Array.isArray(data)) return data
@@ -18,6 +22,8 @@ export default function Dashboard() {
   const [loading, setLoading] = useState(true)
   const [toggling, setToggling] = useState(false)
   const [counts, setCounts] = useState({ products: 0, orders: 0 })
+  // checklistRef lets the not-live "Finish setup" link scroll to the checklist card
+  const checklistRef = null
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -86,10 +92,14 @@ export default function Dashboard() {
     )
   }
 
+  // §2.3: show info line only when switch is ON but shop is not live
+  const showNotLiveLine = shop.is_open && !shop.isLive && !shop.is_live
+
   return (
     <div className="page">
       <h1 className="page-title">Dashboard</h1>
 
+      {/* Shop card */}
       <div className="card shop-card">
         <div className="shop-card-top">
           <div>
@@ -121,6 +131,35 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {/* §2.3 not-live info line — only when Open but not yet live */}
+      {showNotLiveLine && (
+        <div className="not-live-info">
+          <Icon name="info" size={14} />
+          <span>
+            Your shop is Open but not live yet — customers can&apos;t see you until you finish setup.{' '}
+            <a
+              href="#checklist"
+              onClick={(e) => {
+                e.preventDefault()
+                document.getElementById('setup-checklist')?.scrollIntoView({ behavior: 'smooth' })
+              }}
+            >
+              Finish setup
+            </a>
+          </span>
+        </div>
+      )}
+
+      {/* Item 2: Setup checklist card — below shop card, above everything else */}
+      <div id="setup-checklist">
+        <ChecklistCard
+          shop={shop}
+          productCount={counts.products}
+          onGoLive={() => setShop((s) => ({ ...s, isLive: true }))}
+        />
+      </div>
+
+      {/* Stat grid */}
       <div className="stat-grid">
         <Link to="/products" className="card stat-card">
           <span className="stat-num">{counts.products}</span>
@@ -132,6 +171,7 @@ export default function Dashboard() {
         </Link>
       </div>
 
+      {/* Quick actions */}
       <div className="quick-actions">
         <Link to="/products/new" className="btn btn-primary btn-block">
           + Add product
@@ -140,6 +180,12 @@ export default function Dashboard() {
           View orders
         </Link>
       </div>
+
+      {/* Item 5: Low stock card — below quick-actions */}
+      <LowStockCard shopId={shop.id} />
+
+      {/* Item 5: Slow movers card — below low stock */}
+      <SlowMoversCard shopId={shop.id} />
     </div>
   )
 }

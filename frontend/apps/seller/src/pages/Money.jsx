@@ -3,6 +3,7 @@ import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
+import KhataSection from '../components/KhataSection.jsx'
 
 function getOrderTotal(o) {
   if (o.total != null && !isNaN(Number(o.total))) {
@@ -25,7 +26,8 @@ export default function Money() {
     try {
       const res = await api.get('/orders')
       const list = Array.isArray(res.data) ? res.data : res.data?.orders || []
-      setOrders(list)
+      // Practice orders never affect sales totals (§1 hard rules)
+      setOrders(list.filter((o) => !o.isPractice))
     } catch (err) {
       toast(getErrorMessage(err), 'error')
     } finally {
@@ -62,6 +64,7 @@ export default function Money() {
         </button>
       </div>
 
+      {/* 1. Earnings received */}
       {orders.length === 0 ? (
         <div className="card empty-card">
           <p className="empty-icon"><Icon name="money" size={40} /></p>
@@ -77,6 +80,7 @@ export default function Money() {
             </p>
           </div>
 
+          {/* 2. Pending from open orders */}
           <div className="card">
             <h3 style={{ margin: '0 0 4px', fontSize: 16 }}>Pending from open orders</h3>
             <div className="money-hero">₹{pending.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</div>
@@ -87,6 +91,10 @@ export default function Money() {
         </>
       )}
 
+      {/* 3. Khata — customer credit (Item 3) */}
+      <KhataSection />
+
+      {/* 4. UPI daily settlements — coming soon (existing; moved below Khata) */}
       <div className="card">
         <h3 style={{ margin: '0 0 6px', fontSize: 16 }}>UPI daily settlements — coming soon</h3>
         <p className="muted small" style={{ margin: 0 }}>

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom'
 import { useAuth } from '../AuthContext.jsx'
 import { signOutUser } from '../firebase.js'
 import Icon from '../components/Icon.jsx'
+import { useAlertCtx } from '../components/OrderAlertHost.jsx'
 
 const SUPPORT_ITEMS = [
   {
@@ -22,8 +23,20 @@ const SUPPORT_ITEMS = [
   },
 ]
 
+const SOUND_STYLES = ['bell', 'classic', 'soft']
+const PACK_MINS = [10, 15, 20]
+
 export default function More() {
   const { user } = useAuth()
+  const alertCtx = useAlertCtx()
+
+  // alertCtx may be null if OrderAlertHost isn't wrapping (safety guard)
+  const soundOn = alertCtx?.soundOn ?? true
+  const soundStyle = alertCtx?.soundStyle ?? 'bell'
+  const vibrateOn = alertCtx?.vibrateOn ?? true
+  const packMins = alertCtx?.packMins ?? 15
+  const pushDenied = alertCtx?.pushDenied ?? false
+  const pushGranted = alertCtx?.pushGranted ?? false
 
   return (
     <div className="page">
@@ -41,6 +54,141 @@ export default function More() {
           <Icon name="chart" size={20} />
           <span>Business Advisory</span>
         </Link>
+      </div>
+
+      {/* ---- Order alerts settings (Item 1, §1.4) ---- */}
+      <div className="card" style={{ padding: 0 }}>
+        <div style={{ padding: '12px 16px 4px' }}>
+          <h3 style={{ margin: 0, fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Icon name="bell" size={18} style={{ color: 'var(--amber)' }} />
+            Order alerts
+          </h3>
+        </div>
+
+        {/* 1. New order sound switch */}
+        <div className="settings-row">
+          <Icon name="bell" size={20} />
+          <span style={{ flex: 1 }}>New order sound</span>
+          <button
+            type="button"
+            className={`switch ${soundOn ? 'on' : ''}`}
+            onClick={() => alertCtx?.setSoundOn?.(!soundOn)}
+            role="switch"
+            aria-checked={soundOn}
+            aria-label="New order sound"
+          >
+            <span className="knob" />
+          </button>
+        </div>
+
+        {/* 2. Sound style chips */}
+        <div className="settings-row" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <Icon name="play" size={20} />
+          <span style={{ flex: 1 }}>Sound style</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {SOUND_STYLES.map((s) => (
+              <button
+                key={s}
+                type="button"
+                className={`chip ${soundStyle === s ? 'active' : ''}`}
+                style={{ display: 'flex', alignItems: 'center', gap: 4, minHeight: 36, padding: '4px 10px' }}
+                onClick={() => {
+                  alertCtx?.setSoundStyle?.(s)
+                  alertCtx?.previewSound?.(s)
+                }}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+                <Icon name="play" size={12} />
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Vibrate switch */}
+        <div className="settings-row">
+          <Icon name="bell" size={20} />
+          <span style={{ flex: 1 }}>Vibrate on new order</span>
+          <button
+            type="button"
+            className={`switch ${vibrateOn ? 'on' : ''}`}
+            onClick={() => alertCtx?.setVibrateOn?.(!vibrateOn)}
+            role="switch"
+            aria-checked={vibrateOn}
+            aria-label="Vibrate on new order"
+          >
+            <span className="knob" />
+          </button>
+        </div>
+
+        {/* 4. Packing time chips */}
+        <div className="settings-row" style={{ flexWrap: 'wrap', gap: 10 }}>
+          <Icon name="clock" size={20} />
+          <span style={{ flex: 1 }}>Packing time</span>
+          <div style={{ display: 'flex', gap: 8 }}>
+            {PACK_MINS.map((m) => (
+              <button
+                key={m}
+                type="button"
+                className={`chip ${packMins === m ? 'active' : ''}`}
+                style={{ minHeight: 36, padding: '4px 10px' }}
+                onClick={() => alertCtx?.setPackMins?.(m)}
+              >
+                {m} min
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 5. Test alert button */}
+        <div className="settings-row">
+          <Icon name="bell" size={20} />
+          <span style={{ flex: 1 }}>Test alert</span>
+          <button
+            type="button"
+            className="btn btn-outline btn-sm"
+            onClick={() => alertCtx?.triggerTestAlert?.()}
+          >
+            Test
+          </button>
+        </div>
+
+        {/* 6. Silent-mode helper line */}
+        <div style={{ padding: '8px 16px 12px', fontSize: 12, color: 'var(--muted)' }}>
+          <Icon name="info" size={12} style={{ verticalAlign: -2, marginRight: 4 }} />
+          If your phone is on silent, the ring may not play — keep vibrate on.
+        </div>
+
+        {/* 7. Background alerts — Push permission row */}
+        {!pushGranted && !pushDenied && (
+          <div className="settings-row">
+            <Icon name="bell" size={20} />
+            <span style={{ flex: 1 }}>Background alerts</span>
+            <button
+              type="button"
+              className="btn btn-primary btn-sm"
+              onClick={() => alertCtx?.requestPush?.()}
+            >
+              Turn on
+            </button>
+          </div>
+        )}
+
+        {/* Push denied — honest grey card per §1.5 */}
+        {pushDenied && (
+          <div style={{ padding: '10px 16px 14px' }}>
+            <div className="card" style={{ background: '#f5f5f5', border: '1px solid #e0e0e0', color: 'var(--muted)', fontSize: 13, lineHeight: 1.5 }}>
+              Browser alerts are blocked. Keep the app open — it checks for new orders every 30 seconds and rings loudly. To allow background alerts later: browser Settings → Notifications → allow this site.
+            </div>
+          </div>
+        )}
+
+        {pushGranted && (
+          <div className="settings-row">
+            <Icon name="bell" size={20} />
+            <span style={{ flex: 1 }}>Background alerts</span>
+            <span className="badge badge-green">On</span>
+          </div>
+        )}
       </div>
 
       <div className="card">

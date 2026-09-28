@@ -4,6 +4,7 @@ import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
+import { setProductStock } from '../helpers/setProductStock.js'
 
 export default function Products() {
   const toast = useToast()
@@ -56,22 +57,14 @@ export default function Products() {
     setTogglingId(p.id)
     try {
       if (hasStock) {
-        try {
-          localStorage.setItem(`lf_stock_${p.id}`, String(p.stock))
-        } catch (_) {}
-        await api.put(`/products/${p.id}`, { stock: 0 })
+        // Mark out of stock — shared helper saves prevQty to lf_stock_<id>
+        await setProductStock(p, false)
         setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, stock: 0 } : x)))
         toast('Marked out of stock', 'success')
       } else {
-        let restored = 10
-        try {
-          const saved = localStorage.getItem(`lf_stock_${p.id}`)
-          const parsed = parseInt(saved, 10)
-          if (!isNaN(parsed) && parsed > 0) {
-            restored = parsed
-          }
-        } catch (_) {}
-        await api.put(`/products/${p.id}`, { stock: restored })
+        // Restore — shared helper reads prevQty from lf_stock_<id>, falls back to 10 if missing
+        const result = await setProductStock(p, true)
+        const restored = result?.stock ?? 10
         setProducts((list) => list.map((x) => (x.id === p.id ? { ...x, stock: restored } : x)))
         toast('Back in stock', 'success')
       }

@@ -24,6 +24,17 @@ const paths = {
   idcard: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M6 16c.5-1.5 1.7-2.5 3-2.5s2.5 1 3 2.5" /><path d="M14 9h4M14 13h4" /></>,
   lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>,
   car: <><path d="M5 16l1.5-5A2 2 0 0 1 8.4 9.5h7.2a2 2 0 0 1 1.9 1.5L19 16" /><path d="M4 16h16v4H4z" /><circle cx="8" cy="18.5" r="1.5" /><circle cx="16" cy="18.5" r="1.5" /></>,
+  // Phase 2 additions — spec-required new icons (Appendix A §11)
+  book: <><path d="M4 3h13a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4" /><path d="M4 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2" /><path d="M8 7h7M8 11h7M8 15h4" /></>,
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 6-3 8-3 8h18s-3-2-3-8" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>,
+  clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
+  megaphone: <><path d="M3 11v2a7 7 0 0 0 7 7h1" /><path d="M11 20l2-5" /><path d="M5 12h14l2-8H5" /><path d="M5 12V6" /></>,
+  // Utility icons used by new components
+  plus: <><path d="M12 5v14M5 12h14" /></>,
+  play: <><polygon points="5,3 19,12 5,21" /></>,
+  chevron_down: <path d="M6 9l6 6 6-6" />,
+  info: <><circle cx="12" cy="12" r="9" /><path d="M12 8v4M12 16v.5" /></>,
+  mute: <><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6M17 9l6 6" /></>,
 }
 
 export default function Icon({ name, size = 20, className = '' }) {
