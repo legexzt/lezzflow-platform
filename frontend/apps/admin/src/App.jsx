@@ -10,6 +10,7 @@ import Orders from './pages/Orders.jsx';
 import Users from './pages/Users.jsx';
 import Products from './pages/Products.jsx';
 import Kyc from './pages/Kyc.jsx';
+import LocalityAnalytics from './pages/LocalityAnalytics.jsx';
 
 export default function App() {
   const { firebaseUser, role, loading, verifyError } = useAuth();
@@ -36,6 +37,7 @@ export default function App() {
         <Route path="/users" element={<Users />} />
         <Route path="/products" element={<Products />} />
         <Route path="/kyc" element={<Kyc />} />
+        <Route path="/analytics" element={<LocalityAnalytics />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

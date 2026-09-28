@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { to: '/users', label: 'Users', icon: 'users' },
   { to: '/products', label: 'Products', icon: 'cart' },
   { to: '/kyc', label: 'KYC Review', icon: 'idcard' },
+  { to: '/analytics', label: 'Locality analytics', icon: 'location' },
 ];
 
 export default function Layout({ children }) {
