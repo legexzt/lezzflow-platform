@@ -225,7 +225,81 @@ describe('Auth Middleware & Auth Endpoints', () => {
       expect(res.body.user.name).toBe('Alice Wonder');
     });
 
-    it('should update existing user when verified again', async () => {
+
+    // (a) New user attempts to self-assign 'admin' -> must be blocked with 403, no user row created
+    it('should return 403 and NOT create a user when a new user sends role:admin', async () => {
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({
+          uid: 'evil-new-uid',
+          email: 'evil@example.com',
+        }),
+      });
+
+      const res = await request(app)
+        .post('/api/auth/verify')
+        .send({ idToken: 'token-evil', role: 'admin', name: 'Evil Admin' });
+
+      expect(res.status).toBe(403);
+      expect(res.body.error).toContain("Role 'admin' cannot be self-assigned");
+
+      // Verify no user row was created in the DB
+      const { query: dbQuery } = require('./helpers/testDb');
+      const check = await dbQuery('SELECT * FROM users WHERE firebase_uid = $1', ['evil-new-uid']);
+      expect(check.rows.length).toBe(0);
+    });
+
+    // (b) Existing seller sends role:'admin' on verify -> 200 but role stays 'seller'
+    it('should NOT change role of existing user even when role:admin is sent', async () => {
+      await createTestUser({
+        firebase_uid: 'existing-seller-uid',
+        role: 'seller',
+        name: 'Seller Sam',
+      });
+
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({
+          uid: 'existing-seller-uid',
+          email: 'seller@example.com',
+        }),
+      });
+
+      const res = await request(app)
+        .post('/api/auth/verify')
+        .send({ idToken: 'token-seller', role: 'admin', name: 'Seller Sam' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.role).toBe('seller');
+      expect(res.body.role).toBe('seller');
+
+      // Double-check DB
+      const { query: dbQuery } = require('./helpers/testDb');
+      const dbCheck = await dbQuery('SELECT role FROM users WHERE firebase_uid = $1', ['existing-seller-uid']);
+      expect(dbCheck.rows[0].role).toBe('seller');
+    });
+
+    // (c) New users with allowed roles (seller, customer, partner) get created successfully
+    it('should create new users with allowed roles: seller, customer, partner', async () => {
+      for (const allowedRole of ['seller', 'customer', 'partner']) {
+        const uid = `new-uid-${allowedRole}`;
+        jest.spyOn(admin, 'auth').mockReturnValue({
+          verifyIdToken: jest.fn().mockResolvedValue({
+            uid,
+            email: `${allowedRole}@example.com`,
+          }),
+        });
+
+        const res = await request(app)
+          .post('/api/auth/verify')
+          .send({ idToken: `token-${allowedRole}`, role: allowedRole, name: `Test ${allowedRole}` });
+
+        expect(res.status).toBe(200);
+        expect(res.body.user.role).toBe(allowedRole);
+        expect(res.body.role).toBe(allowedRole);
+      }
+    });
+
+    // Fixed: existing user verify does NOT change role (was: asserted role changed customer->partner)
+    it('should update existing user name but NOT change role when verified again', async () => {
       await createTestUser({
         firebase_uid: 'existing-fb-uid',
         role: 'customer',
@@ -249,7 +323,33 @@ describe('Auth Middleware & Auth Endpoints', () => {
 
       expect(res.status).toBe(200);
       expect(res.body.user.name).toBe('New Name');
-      expect(res.body.user.role).toBe('partner');
+      // Role must NOT have changed — stays 'customer'
+      expect(res.body.user.role).toBe('customer');
+      expect(res.body.role).toBe('customer');
+    });
+
+    // Existing admin keeps their role on verify (admin is not stripped)
+    it('should keep admin role for existing admin user on verify', async () => {
+      await createTestUser({
+        firebase_uid: 'existing-admin-uid',
+        role: 'admin',
+        name: 'Admin Alice',
+      });
+
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({
+          uid: 'existing-admin-uid',
+          email: 'admin@example.com',
+        }),
+      });
+
+      const res = await request(app)
+        .post('/api/auth/verify')
+        .send({ idToken: 'token-admin', name: 'Admin Alice' });
+
+      expect(res.status).toBe(200);
+      expect(res.body.user.role).toBe('admin');
+      expect(res.body.role).toBe('admin');
     });
   });
 });

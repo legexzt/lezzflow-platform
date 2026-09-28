@@ -275,6 +275,59 @@ h3 {
   margin-bottom: 0.5rem;
 }
 
+.login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  width: 100%;
+  color: var(--gray-500);
+  font-size: 0.78rem;
+}
+
+.login-divider::before,
+.login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--gray-300);
+}
+
+.email-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  width: 100%;
+  margin-top: 0.15rem;
+}
+
+.input {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  font: inherit;
+  font-size: 0.9rem;
+  background: #fff;
+  color: var(--gray-900);
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.input:focus {
+  border-color: var(--green-600);
+}
+
+.btn-secondary {
+  background: #fff;
+  border-color: var(--gray-300);
+  color: var(--gray-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  border-color: var(--green-600);
+  color: var(--gray-900);
+}
+
 /* Map */
 .map {
   width: 100%;

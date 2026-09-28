@@ -16,12 +16,29 @@ function GoogleIcon() {
   )
 }
 
+function emailAuthMessage(code, message) {
+  if (
+    code === 'auth/invalid-credential' ||
+    code === 'auth/user-not-found' ||
+    code === 'auth/wrong-password'
+  ) {
+    return 'Invalid email or password.'
+  }
+  if (code === 'auth/invalid-email') {
+    return 'Please enter a valid email address.'
+  }
+  return message || 'Sign-in failed. Please try again.'
+}
+
 export default function Login() {
   const { firebaseUser, loading } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [logoOk, setLogoOk] = useState(true)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [emailBusy, setEmailBusy] = useState(false)
 
   if (loading) return <Loading full />
   if (firebaseUser) return <Navigate to="/" replace />
@@ -37,6 +54,21 @@ export default function Login() {
       }
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function handleEmailLogin(e) {
+    e.preventDefault()
+    setEmailBusy(true)
+    try {
+      const { signInWithEmailAndPassword } = await import('firebase/auth')
+      const { auth } = await import('../firebase.js')
+      await signInWithEmailAndPassword(auth, email, password)
+      navigate('/', { replace: true })
+    } catch (err) {
+      toast(emailAuthMessage(err?.code, err?.message), 'error')
+    } finally {
+      setEmailBusy(false)
     }
   }
 
@@ -61,6 +93,32 @@ export default function Login() {
           <GoogleIcon />
           {busy ? 'Signing in…' : 'Continue with Google'}
         </button>
+        <div className="login-divider">
+          <span>Sign in with email</span>
+        </div>
+        <form className="email-auth-form" onSubmit={handleEmailLogin} noValidate>
+          <input
+            type="email"
+            className="input"
+            placeholder="Email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoComplete="email"
+          />
+          <input
+            type="password"
+            className="input"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            autoComplete="current-password"
+          />
+          <button type="submit" className="btn btn-secondary btn-block" disabled={emailBusy}>
+            {emailBusy ? 'Signing in…' : 'Sign in'}
+          </button>
+        </form>
       </div>
     </div>
   )
