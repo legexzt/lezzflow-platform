@@ -30,8 +30,27 @@ function createRealPool() {
 }
 
 function createMemPool() {
-  const { newDb } = require('pg-mem');
+  const { newDb, DataType } = require('pg-mem');
   const memDb = newDb();
+  // pg-mem ships very few native string functions; register the standard
+  // Postgres ones our migrations use (trim, strpos) so .sql migrations run
+  // identically in tests and in production.
+  memDb.public.registerFunction({
+    name: 'trim',
+    args: [DataType.text],
+    returns: DataType.text,
+    implementation: (x) => (x == null ? null : String(x).trim()),
+  });
+  memDb.public.registerFunction({
+    name: 'strpos',
+    args: [DataType.text, DataType.text],
+    returns: DataType.integer,
+    implementation: (str, sub) => {
+      if (str == null || sub == null) return null;
+      const i = String(str).indexOf(String(sub));
+      return i === -1 ? 0 : i + 1; // 1-based like Postgres
+    },
+  });
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   for (const file of files) {
