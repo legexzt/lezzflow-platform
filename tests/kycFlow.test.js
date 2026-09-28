@@ -3,6 +3,7 @@ process.env.NODE_ENV = 'test';
 const request = require('supertest');
 const app = require('../app');
 const admin = require('../config/firebase');
+const { query } = require('../db');
 const {
   setupTestDb,
   createTestUser,
@@ -165,6 +166,9 @@ describe('KYC Approve/Reject Flow & Partner Delivery Execution', () => {
         verifyIdToken: jest.fn().mockResolvedValue({ uid: partnerUser.firebase_uid }),
       });
 
+      // Partner must be on-duty to receive open 'requested' pings
+      await query('UPDATE users SET is_online = true WHERE id = $1', [partnerUser.id]);
+
       const res = await request(app)
         .get('/api/delivery/requests')
         .set('Authorization', 'Bearer partner-token');
@@ -179,6 +183,9 @@ describe('KYC Approve/Reject Flow & Partner Delivery Execution', () => {
         verifyIdToken: jest.fn().mockResolvedValue({ uid: partnerUser.firebase_uid }),
       });
 
+      // Partner must be on-duty to accept new requests
+      await query('UPDATE users SET is_online = true WHERE id = $1', [partnerUser.id]);
+
       // 1. Accept request (requested -> accepted)
       const acceptRes = await request(app)
         .patch(`/api/delivery/requests/${deliveryRequest.id}`)
@@ -189,20 +196,34 @@ describe('KYC Approve/Reject Flow & Partner Delivery Execution', () => {
       expect(acceptRes.body.status).toBe('accepted');
       expect(acceptRes.body.partner_id).toBe(partnerUser.id);
 
-      // 2. Pick order (accepted -> picked)
+      // Server-generated pickup OTP is masked from partner responses; read it
+      // directly here as the shop would via its own surface.
+      const pickupRow = await query('SELECT pickup_otp FROM delivery_requests WHERE id = $1', [
+        deliveryRequest.id,
+      ]);
+      const pickupOtp = pickupRow.rows[0].pickup_otp;
+      expect(pickupOtp).toMatch(/^\d{4}$/);
+
+      // 2. Pick order (accepted -> picked) with the shop's pickup code
       const pickRes = await request(app)
         .patch(`/api/delivery/requests/${deliveryRequest.id}`)
         .set('Authorization', 'Bearer partner-token')
-        .send({ status: 'picked' });
+        .send({ status: 'picked', otp: pickupOtp });
 
       expect(pickRes.status).toBe(200);
       expect(pickRes.body.status).toBe('picked');
 
-      // 3. Deliver order (picked -> delivered)
+      const deliveryRow = await query('SELECT delivery_otp FROM delivery_requests WHERE id = $1', [
+        deliveryRequest.id,
+      ]);
+      const deliveryOtp = deliveryRow.rows[0].delivery_otp;
+      expect(deliveryOtp).toMatch(/^\d{4}$/);
+
+      // 3. Deliver order (picked -> delivered) with the customer's delivery code
       const deliverRes = await request(app)
         .patch(`/api/delivery/requests/${deliveryRequest.id}`)
         .set('Authorization', 'Bearer partner-token')
-        .send({ status: 'delivered' });
+        .send({ status: 'delivered', otp: deliveryOtp });
 
       expect(deliverRes.status).toBe(200);
       expect(deliverRes.body.status).toBe('delivered');

@@ -74,8 +74,24 @@ export async function acceptDelivery(id) {
   return data;
 }
 
-export async function updateDeliveryStatus(id, status) {
-  const { data } = await api.patch(`/delivery/requests/${id}`, { status });
+export async function updateDeliveryStatus(id, status, otp) {
+  const payload = { status };
+  if (otp !== undefined && otp !== null && otp !== '') {
+    payload.otp = String(otp).trim();
+  }
+  const { data } = await api.patch(`/delivery/requests/${id}`, payload);
+  return data;
+}
+
+// ---- Partner Profile ----
+
+export async function fetchMyProfile() {
+  const { data } = await api.get('/partner/me');
+  return data;
+}
+
+export async function updateMyProfile(updates) {
+  const { data } = await api.patch('/partner/me', updates);
   return data;
 }
 

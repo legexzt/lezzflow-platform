@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const { query } = require('../db');
 
 const PARTNER_LEGAL_TRANSITIONS = {
@@ -25,8 +26,10 @@ async function checkPartnerKycApproved(partnerId) {
 
 /**
  * GET /api/delivery/requests
- * Partner only, KYC must be approved.
- * Returns requests assigned to this partner OR unassigned 'requested' ones.
+ * Partner only, KYC must be approved (admins bypass).
+ * An off-duty partner (is_online=false, role=partner) sees ONLY requests already assigned to them.
+ * An on-duty partner or an admin additionally sees unassigned 'requested' pings.
+ * Strips pickup_otp and delivery_otp for partners.
  */
 async function listDeliveryRequests(req, res, next) {
   try {
@@ -37,17 +40,49 @@ async function listDeliveryRequests(req, res, next) {
       });
     }
 
-    const result = await query(
-      `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
-       FROM delivery_requests dr
-       JOIN orders o ON dr.order_id = o.id
-       JOIN shops s ON o.shop_id = s.id
-       WHERE dr.partner_id = $1 OR (dr.partner_id IS NULL AND dr.status = 'requested')
-       ORDER BY dr.id DESC`,
-      [req.user.id]
-    );
+    const isPartner = req.user.role === 'partner';
+    const isOffDuty = isPartner && !req.user.is_online;
 
-    return res.json(result.rows);
+    let result;
+    if (req.user.role === 'admin') {
+      result = await query(
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+         FROM delivery_requests dr
+         JOIN orders o ON dr.order_id = o.id
+         JOIN shops s ON o.shop_id = s.id
+         ORDER BY dr.id DESC`
+      );
+    } else if (isOffDuty) {
+      result = await query(
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+         FROM delivery_requests dr
+         JOIN orders o ON dr.order_id = o.id
+         JOIN shops s ON o.shop_id = s.id
+         WHERE dr.partner_id = $1
+         ORDER BY dr.id DESC`,
+        [req.user.id]
+      );
+    } else {
+      result = await query(
+        `SELECT dr.*, o.shop_id, o.fulfillment, o.total, o.items, o.customer_id, s.name as shop_name, s.address as shop_address
+         FROM delivery_requests dr
+         JOIN orders o ON dr.order_id = o.id
+         JOIN shops s ON o.shop_id = s.id
+         WHERE dr.partner_id = $1 OR (dr.partner_id IS NULL AND dr.status = 'requested')
+         ORDER BY dr.id DESC`,
+        [req.user.id]
+      );
+    }
+
+    const rows = result.rows.map((row) => {
+      if (req.user.role === 'partner') {
+        const { pickup_otp, delivery_otp, ...clean } = row;
+        return clean;
+      }
+      return row;
+    });
+
+    return res.json(rows);
   } catch (error) {
     next(error);
   }
@@ -83,6 +118,15 @@ async function updateDeliveryRequestStatus(req, res, next) {
     const currentStatus = deliveryReq.status;
     const targetStatus = status.toLowerCase();
 
+    // Check 409 race handling: if request is already accepted by another partner
+    if (targetStatus === 'accepted') {
+      if (deliveryReq.partner_id !== null && deliveryReq.partner_id !== req.user.id) {
+        return res.status(409).json({
+          error: 'Delivery request has already been accepted by another partner.',
+        });
+      }
+    }
+
     // Check valid transition
     if (!isValidDeliveryStatusTransition(currentStatus, targetStatus)) {
       return res.status(400).json({
@@ -90,11 +134,11 @@ async function updateDeliveryRequestStatus(req, res, next) {
       });
     }
 
-    // Check ownership / assignment
+    // Check duty guard: offline partner cannot accept new requests
     if (targetStatus === 'accepted') {
-      if (deliveryReq.partner_id !== null && deliveryReq.partner_id !== req.user.id) {
-        return res.status(409).json({
-          error: 'Delivery request has already been accepted by another partner.',
+      if (req.user.role === 'partner' && !req.user.is_online) {
+        return res.status(403).json({
+          error: 'You are offline. Go online to accept deliveries.',
         });
       }
     } else {
@@ -106,15 +150,53 @@ async function updateDeliveryRequestStatus(req, res, next) {
       }
     }
 
+    // OTP validation
+    if (targetStatus === 'picked') {
+      const providedOtp = req.body.otp !== undefined && req.body.otp !== null ? String(req.body.otp).trim() : '';
+      if (!providedOtp || providedOtp !== String(deliveryReq.pickup_otp)) {
+        return res.status(400).json({
+          error: 'Incorrect pickup code. Ask the shop staff for the 4-digit code.',
+        });
+      }
+    } else if (targetStatus === 'delivered') {
+      const providedOtp = req.body.otp !== undefined && req.body.otp !== null ? String(req.body.otp).trim() : '';
+      if (!providedOtp || providedOtp !== String(deliveryReq.delivery_otp)) {
+        return res.status(400).json({
+          error: 'Incorrect delivery code. Ask the customer for the 4-digit code.',
+        });
+      }
+    }
+
     // Update delivery request
-    const partnerIdToSet = targetStatus === 'accepted' ? req.user.id : deliveryReq.partner_id;
-    const updatedResult = await query(
-      `UPDATE delivery_requests
-       SET status = $1, partner_id = $2, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $3
-       RETURNING *`,
-      [targetStatus, partnerIdToSet, id]
-    );
+    let updatedResult;
+    if (targetStatus === 'accepted') {
+      const pickupOtp = String(crypto.randomInt(1000, 10000));
+      const partnerIdToSet = req.user.id;
+      updatedResult = await query(
+        `UPDATE delivery_requests
+         SET status = $1, partner_id = $2, pickup_otp = $3, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $4
+         RETURNING *`,
+        [targetStatus, partnerIdToSet, pickupOtp, id]
+      );
+    } else if (targetStatus === 'picked') {
+      const deliveryOtp = String(crypto.randomInt(1000, 10000));
+      updatedResult = await query(
+        `UPDATE delivery_requests
+         SET status = $1, delivery_otp = $2, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $3
+         RETURNING *`,
+        [targetStatus, deliveryOtp, id]
+      );
+    } else {
+      updatedResult = await query(
+        `UPDATE delivery_requests
+         SET status = $1, updated_at = CURRENT_TIMESTAMP
+         WHERE id = $2
+         RETURNING *`,
+        [targetStatus, id]
+      );
+    }
 
     // Sync order status
     let correspondingOrderStatus = null;
@@ -135,7 +217,13 @@ async function updateDeliveryRequestStatus(req, res, next) {
       );
     }
 
-    return res.json(updatedResult.rows[0]);
+    const responseData = { ...updatedResult.rows[0] };
+    if (req.user.role === 'partner') {
+      delete responseData.pickup_otp;
+      delete responseData.delivery_otp;
+    }
+
+    return res.json(responseData);
   } catch (error) {
     next(error);
   }
