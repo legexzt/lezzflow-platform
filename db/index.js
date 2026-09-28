@@ -61,6 +61,12 @@ function createMemPool() {
       return String(str).replace(re, String(replacement ?? ''));
     },
   });
+  memDb.public.registerFunction({
+    name: 'gen_random_uuid',
+    args: [],
+    returns: DataType.uuid,
+    implementation: () => require('crypto').randomUUID(),
+  });
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   for (const file of files) {

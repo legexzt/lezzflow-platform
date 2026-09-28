@@ -7,6 +7,13 @@ const { listLocalities, getLocality } = require('../controllers/localityAnalytic
 const { listSosAlerts, updateSosAlert } = require('../controllers/deliveryController');
 const { listAdminOffers } = require('../controllers/offerController');
 const { listAdminReferrals } = require('../controllers/referralController');
+const {
+  adminListSchemes,
+  adminCreateScheme,
+  adminUpdateScheme,
+  adminDeleteScheme,
+} = require('../controllers/schemesController');
+const { adminCreateNotification } = require('../controllers/notificationsController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
 const { requireAdminWrite } = require('../middleware/adminWrite');
@@ -29,6 +36,15 @@ router.get('/onboarding/funnel-dropoff', authenticateToken, requireRole('admin')
 // Partner SOS alerts (read-only; admin auth) — receiving end of the partner SOS FAB
 router.get('/sos-alerts', authenticateToken, requireRole('admin'), listSosAlerts);
 router.patch('/sos-alerts/:id', authenticateToken, requireRole('admin'), requireAdminWrite, updateSosAlert);
+
+// Sarkari Yojanaen (government schemes) — admin curation for the Mart app
+router.get('/schemes', authenticateToken, requireRole('admin'), adminListSchemes);
+router.post('/schemes', authenticateToken, requireRole('admin'), requireAdminWrite, adminCreateScheme);
+router.patch('/schemes/:id', authenticateToken, requireRole('admin'), requireAdminWrite, adminUpdateScheme);
+router.delete('/schemes/:id', authenticateToken, requireRole('admin'), requireAdminWrite, adminDeleteScheme);
+
+// Notifications — admin can broadcast or target a user
+router.post('/notifications', authenticateToken, requireRole('admin'), requireAdminWrite, adminCreateNotification);
 
 // Audit and operations viewer routes
 router.get('/audit', authenticateToken, requireRole('admin'), listAudit);

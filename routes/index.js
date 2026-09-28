@@ -16,6 +16,8 @@ const partnerRoutes = require('./partnerRoutes');
 const onboardingRoutes = require('./onboardingRoutes');
 const configRoutes = require('./configRoutes');
 const offerRoutes = require('./offerRoutes');
+const schemesRoutes = require('./schemesRoutes');
+const notificationsRoutes = require('./notificationsRoutes');
 
 // Mount sub-routes under /api
 router.use('/auth', authRoutes);
@@ -33,6 +35,8 @@ router.use('/scan', scanRoutes);
 router.use('/upload', uploadRoutes);
 router.use('/advisory', advisoryRoutes);
 router.use('/onboarding', onboardingRoutes); // /api/v1/onboarding/funnel-event
+router.use('/schemes', schemesRoutes); // /api/v1/schemes (public Sarkari Yojanaen)
+router.use('/notifications', notificationsRoutes); // /api/v1/notifications (auth)
 
 // Payment coming soon endpoint
 router.get('/payment', (req, res) => {
