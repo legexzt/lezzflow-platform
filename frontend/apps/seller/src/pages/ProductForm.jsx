@@ -3,6 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom'
 import { Html5Qrcode } from 'html5-qrcode'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
+import { useLang } from '../LanguageContext.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
 
@@ -124,6 +125,7 @@ export default function ProductForm() {
   const isEdit = Boolean(id)
   const navigate = useNavigate()
   const toast = useToast()
+  const { t } = useLang()
 
   const [tab, setTab] = useState('ai')
   const [loading, setLoading] = useState(isEdit)
@@ -135,6 +137,7 @@ export default function ProductForm() {
     description: '',
     price: '',
     stock: '',
+    cost_price: '',
     image_url: '',
   })
 
@@ -224,6 +227,7 @@ export default function ProductForm() {
               description: p.description || '',
               price: p.price ?? '',
               stock: p.stock ?? '',
+              cost_price: p.cost_price ?? '',
               image_url: p.image_url || p.image || '',
             })
           } else {
@@ -517,6 +521,9 @@ export default function ProductForm() {
     if (form.stock !== '' && (Number.isNaN(Number(form.stock)) || Number(form.stock) < 0)) {
       return toast('Enter a valid stock quantity', 'error')
     }
+    if (form.cost_price !== '' && (Number.isNaN(Number(form.cost_price)) || Number(form.cost_price) < 0)) {
+      return toast('Enter a valid cost price', 'error')
+    }
 
     setSaving(true)
     const payload = {
@@ -525,6 +532,7 @@ export default function ProductForm() {
       description: form.description.trim(),
       price: Number(form.price),
       stock: form.stock === '' ? 0 : Number(form.stock),
+      cost_price: form.cost_price === '' ? null : Number(form.cost_price),
       image_url: form.image_url || null,
       ...(shopId ? { shop_id: shopId } : {}),
     }
@@ -563,6 +571,7 @@ export default function ProductForm() {
       description: form.description.trim(),
       price: Number(form.price),
       stock: form.stock === '' ? 0 : Number(form.stock),
+      cost_price: form.cost_price === '' ? null : Number(form.cost_price),
       image_url: form.image_url || null,
       ...(shopId ? { shop_id: shopId } : {}),
     }
@@ -574,7 +583,7 @@ export default function ProductForm() {
       setSessionCount((n) => n + 1)
       toast('Saved. Scan the next item.', 'success')
       // Reset form but keep session state
-      setForm({ name: '', category: '', description: '', price: '', stock: '', image_url: '' })
+      setForm({ name: '', category: '', description: '', price: '', stock: '', cost_price: '', image_url: '' })
       setReviewStrip(null)
       setCode('')
       setPriceFieldFlash(false)
@@ -843,6 +852,28 @@ export default function ProductForm() {
               placeholder="0"
             />
           </div>
+        </div>
+
+        {/* Cost price (optional) + live margin preview */}
+        <div className="field">
+          <label htmlFor="p-cost">{t('cost_price')}</label>
+          <input
+            id="p-cost"
+            type="number"
+            min="0"
+            step="0.01"
+            inputMode="decimal"
+            value={form.cost_price}
+            onChange={(e) => update('cost_price', e.target.value)}
+            placeholder="0"
+          />
+          <p className="hint">{t('cost_price_hint')}</p>
+          {form.cost_price !== '' && form.price !== '' && Number(form.price) > 0 && (
+            <p className="margin-preview">
+              {t('margin')}: ₹{(Number(form.price) - Number(form.cost_price)).toFixed(2)} (
+              {(((Number(form.price) - Number(form.cost_price)) / Number(form.price)) * 100).toFixed(1)}%)
+            </p>
+          )}
         </div>
 
         <div className="field">

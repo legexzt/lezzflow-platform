@@ -1,9 +1,11 @@
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useRef } from 'react'
 import { Link } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
+import { useLang } from '../LanguageContext.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
+import PackingSlip from '../components/PackingSlip.jsx'
 
 // Seller status flow: placed → accepted → packed (orders can also be cancelled)
 const NEXT_STATUS = { placed: 'accepted', accepted: 'packed' }
@@ -20,11 +22,29 @@ function toDate(v) {
 
 export default function Orders() {
   const toast = useToast()
+  const { t } = useLang()
   const [shop, setShop] = useState(null)
   const [orders, setOrders] = useState([])
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState('all')
   const [busyId, setBusyId] = useState(null)
+  const [slipOrder, setSlipOrder] = useState(null)
+  const slipRef = useRef(null)
+
+  // Print once the slip has rendered.
+  useEffect(() => {
+    if (slipOrder) {
+      const id = setTimeout(() => window.print(), 150)
+      return () => clearTimeout(id)
+    }
+  }, [slipOrder])
+
+  // Clear the slip after printing so the screen returns to normal.
+  useEffect(() => {
+    const after = () => setSlipOrder(null)
+    window.addEventListener('afterprint', after)
+    return () => window.removeEventListener('afterprint', after)
+  }, [])
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -175,6 +195,13 @@ export default function Orders() {
                   <div className="order-total-row">
                     {total != null && <span className="order-total">Total: ₹{total}</span>}
                     <span className="badge badge-blue"><Icon name="card" size={14} /> Payment coming soon</span>
+                    <button
+                      type="button"
+                      className="btn btn-outline btn-sm"
+                      onClick={() => setSlipOrder(o)}
+                    >
+                      <Icon name="receipt" size={14} /> {t('print_slip')}
+                    </button>
                   </div>
                   {NEXT_STATUS[o.status] ? (
                     <div className="order-actions">
@@ -213,6 +240,11 @@ export default function Orders() {
           })}
         </ul>
       )}
+
+      {/* Hidden on screen; only the slip prints. */}
+      <div id="packing-slip-print" aria-hidden={!slipOrder}>
+        {slipOrder && <PackingSlip order={slipOrder} shop={shop} ref={slipRef} />}
+      </div>
     </div>
   )
 }

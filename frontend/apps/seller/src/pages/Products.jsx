@@ -2,6 +2,7 @@ import { useEffect, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
+import { useLang } from '../LanguageContext.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
 import { setProductStock } from '../helpers/setProductStock.js'
@@ -10,6 +11,7 @@ import { useAuth } from '../AuthContext.jsx'
 
 export default function Products() {
   const toast = useToast()
+  const { t } = useLang()
   const { loading: authLoading } = useAuth()
   const [shop, setShop] = useState(null)
   const [products, setProducts] = useState([])
@@ -135,6 +137,11 @@ export default function Products() {
                   <p className="product-meta">
                     <span className="price">₹{p.price}</span>
                     {p.stock != null && <span className="muted small"> · Stock: {p.stock}</span>}
+                    {p.cost_price != null && p.cost_price !== '' && Number(p.price) > 0 && (
+                      <span className="margin-chip">
+                        {t('margin')} {(((Number(p.price) - Number(p.cost_price)) / Number(p.price)) * 100).toFixed(0)}%
+                      </span>
+                    )}
                   </p>
                   <div className="toggle-row">
                     <span className={`badge ${hasStock ? 'badge-green' : 'badge-grey'}`}>

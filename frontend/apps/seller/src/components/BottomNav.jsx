@@ -2,18 +2,21 @@ import { useEffect, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
 import api from '../api.js'
 import Icon from './Icon.jsx'
-
-const items = [
-  { to: '/', end: true, label: 'Home', icon: 'home' },
-  { to: '/orders', end: false, label: 'Orders', icon: 'receipt' },
-  { to: '/products', end: false, label: 'Products', icon: 'box' },
-  { to: '/money', end: false, label: 'Money', icon: 'money' },
-  { to: '/more', end: false, label: 'More', icon: 'settings' },
-]
+import { useLang } from '../LanguageContext.jsx'
 
 export default function BottomNav() {
   const location = useLocation()
+  const { t } = useLang()
   const [placedCount, setPlacedCount] = useState(0)
+
+  const items = [
+    { to: '/', end: true, label: t('nav_home'), icon: 'home' },
+    { to: '/orders', end: false, label: t('nav_orders'), icon: 'receipt' },
+    { to: '/products', end: false, label: t('nav_products'), icon: 'box' },
+    { to: '/offers', end: false, label: t('nav_offers'), icon: 'megaphone' },
+    { to: '/money', end: false, label: t('nav_money'), icon: 'money' },
+    { to: '/more', end: false, label: t('nav_more'), icon: 'settings' },
+  ]
 
   useEffect(() => {
     let active = true

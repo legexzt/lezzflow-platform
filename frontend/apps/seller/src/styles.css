@@ -1735,3 +1735,185 @@ textarea {
   place-items: center;
   margin: 0 auto 20px;
 }
+
+/* ---- Seller Cycle: offers, timings, margin, packing slip ---- */
+
+.page-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.offer-card {
+  margin-bottom: 10px;
+}
+.offer-card.inactive {
+  opacity: 0.6;
+}
+.offer-main {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.offer-badge {
+  flex-shrink: 0;
+  background: var(--green);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  text-align: center;
+  min-width: 64px;
+}
+.offer-card.inactive .offer-badge {
+  background: var(--muted);
+}
+.offer-info {
+  flex: 1;
+  min-width: 0;
+}
+.offer-title {
+  font-weight: 700;
+  font-size: 15px;
+}
+.offer-desc {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+.offer-meta {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 4px;
+}
+.offer-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.timings-card {
+  margin-top: 16px;
+}
+.timing-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border);
+}
+.timing-day {
+  flex: 1;
+  font-weight: 600;
+  font-size: 14px;
+}
+.timing-times {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.timing-times input[type='time'] {
+  width: 104px;
+}
+
+.margin-chip {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  background: #e8f5e9;
+  color: #2e7d32;
+  border-radius: 999px;
+  padding: 2px 8px;
+  margin-left: 6px;
+}
+.margin-preview {
+  font-size: 13px;
+  font-weight: 700;
+  color: #2e7d32;
+  margin: 6px 0 0;
+}
+
+/* Language picker (More page) */
+.lang-row {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+.lang-row .chip {
+  flex: 1;
+  text-align: center;
+}
+
+/* ---- 80mm packing slip ---- */
+#packing-slip-print {
+  display: none;
+}
+.packing-slip {
+  width: 80mm;
+  max-width: 100%;
+  margin: 0 auto;
+  padding: 8px 6px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #000;
+  background: #fff;
+}
+.slip-center {
+  text-align: center;
+}
+.slip-shop {
+  font-size: 16px;
+  font-weight: 700;
+}
+.slip-small {
+  font-size: 10px;
+}
+.slip-divider {
+  border-top: 1px dashed #000;
+  margin: 8px 0;
+}
+.slip-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.slip-item {
+  margin-bottom: 4px;
+}
+.slip-total {
+  font-size: 15px;
+  font-weight: 700;
+}
+.slip-thanks {
+  margin-top: 8px;
+  font-weight: 700;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #packing-slip-print,
+  #packing-slip-print * {
+    visibility: visible;
+  }
+  #packing-slip-print {
+    display: block;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 80mm;
+  }
+  .packing-slip {
+    margin: 0;
+  }
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+}

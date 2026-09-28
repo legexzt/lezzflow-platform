@@ -70,7 +70,7 @@ async function listProducts(req, res, next) {
  */
 async function createProduct(req, res, next) {
   try {
-    const { shop_id, name, category, price, stock, image_url, barcode } = req.body;
+    const { shop_id, name, category, price, stock, image_url, barcode, cost_price } = req.body;
 
     if (!shop_id || !name || price === undefined) {
       return res.status(400).json({ error: 'shop_id, name, and price are required' });
@@ -90,11 +90,20 @@ async function createProduct(req, res, next) {
     const parsedPrice = parseFloat(price);
     const parsedStock = stock !== undefined ? parseInt(stock, 10) : 0;
 
+    // Optional cost price: null when not provided; must be a non-negative number otherwise.
+    let parsedCost = null;
+    if (cost_price !== undefined && cost_price !== null && cost_price !== '') {
+      parsedCost = parseFloat(cost_price);
+      if (!Number.isFinite(parsedCost) || parsedCost < 0) {
+        return res.status(400).json({ error: 'cost_price must be a non-negative number' });
+      }
+    }
+
     const result = await query(
-      `INSERT INTO products (shop_id, name, category, price, stock, image_url, barcode)
-       VALUES ($1, $2, $3, $4, $5, $6, $7)
+      `INSERT INTO products (shop_id, name, category, price, stock, image_url, barcode, cost_price)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
        RETURNING *`,
-      [shop_id, name, category || null, parsedPrice, parsedStock, image_url || null, barcode || null]
+      [shop_id, name, category || null, parsedPrice, parsedStock, image_url || null, barcode || null, parsedCost]
     );
 
     return res.status(201).json(result.rows[0]);
@@ -129,7 +138,7 @@ async function getProductById(req, res, next) {
 async function updateProduct(req, res, next) {
   try {
     const { id } = req.params;
-    const { name, category, price, stock, image_url, barcode } = req.body;
+    const { name, category, price, stock, image_url, barcode, cost_price } = req.body;
 
     const productResult = await query(
       `SELECT p.*, s.seller_id 
@@ -155,12 +164,26 @@ async function updateProduct(req, res, next) {
     const updatedImageUrl = image_url !== undefined ? image_url : product.image_url;
     const updatedBarcode = barcode !== undefined ? barcode : product.barcode;
 
+    // cost_price: explicit null/'' clears it; omitted keeps the current value.
+    let updatedCost = product.cost_price;
+    if (cost_price !== undefined) {
+      if (cost_price === null || cost_price === '') {
+        updatedCost = null;
+      } else {
+        const parsed = parseFloat(cost_price);
+        if (!Number.isFinite(parsed) || parsed < 0) {
+          return res.status(400).json({ error: 'cost_price must be a non-negative number' });
+        }
+        updatedCost = parsed;
+      }
+    }
+
     const result = await query(
       `UPDATE products
-       SET name = $1, category = $2, price = $3, stock = $4, image_url = $5, barcode = $6, updated_at = CURRENT_TIMESTAMP
-       WHERE id = $7
+       SET name = $1, category = $2, price = $3, stock = $4, image_url = $5, barcode = $6, cost_price = $7, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $8
        RETURNING *`,
-      [updatedName, updatedCategory, updatedPrice, updatedStock, updatedImageUrl, updatedBarcode, id]
+      [updatedName, updatedCategory, updatedPrice, updatedStock, updatedImageUrl, updatedBarcode, updatedCost, id]
     );
 
     return res.json(result.rows[0]);

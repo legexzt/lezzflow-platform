@@ -2,17 +2,21 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
 import { useToast } from '../components/Toast.jsx'
+import { useLang } from '../LanguageContext.jsx'
 import Loading from '../components/Loading.jsx'
 import Icon from '../components/Icon.jsx'
 
 export default function Shop() {
   const toast = useToast()
   const navigate = useNavigate()
+  const { t } = useLang()
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [locating, setLocating] = useState(false)
   const [shopId, setShopId] = useState(null)
   const [form, setForm] = useState({ name: '', address: '', lat: '', lng: '', is_open: true })
+  const [timings, setTimings] = useState(null)
+  const [timingsSaving, setTimingsSaving] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -44,6 +48,40 @@ export default function Shop() {
 
   function update(field, value) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  // Load per-day timings once we know the shop id.
+  useEffect(() => {
+    if (!shopId) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await api.get(`/v1/shops/${shopId}/timings`)
+        if (!cancelled) setTimings(res.data?.timings || null)
+      } catch (err) {
+        if (!cancelled) toast(getErrorMessage(err), 'error')
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [shopId, toast])
+
+  function updateTiming(dow, field, value) {
+    setTimings((list) => list.map((d) => (d.day_of_week === dow ? { ...d, [field]: value } : d)))
+  }
+
+  async function saveTimings() {
+    if (!timings) return
+    setTimingsSaving(true)
+    try {
+      await api.put(`/v1/shops/${shopId}/timings`, { timings })
+      toast(t('timings_saved'), 'success')
+    } catch (err) {
+      toast(getErrorMessage(err), 'error')
+    } finally {
+      setTimingsSaving(false)
+    }
   }
 
   function useMyLocation() {
@@ -169,7 +207,7 @@ export default function Shop() {
         </div>
 
         <div className="switch-row">
-          <span>Shop is open</span>
+          <span>{t('shop_open')}</span>
           <button
             type="button"
             className={`switch ${form.is_open ? 'on' : ''}`}
@@ -183,9 +221,58 @@ export default function Shop() {
         </div>
 
         <button type="submit" className="btn btn-primary btn-block" disabled={saving}>
-          {saving ? 'Saving…' : shopId ? 'Save changes' : 'Create shop'}
+          {saving ? t('saving') : shopId ? t('save') : t('create')}
         </button>
       </form>
+
+      {shopId && timings && (
+        <div className="card timings-card">
+          <h2 className="card-title">{t('timings_title')}</h2>
+          <p className="hint">{t('timings_hint')}</p>
+          {timings.map((d) => (
+            <div key={d.day_of_week} className="timing-row">
+              <span className="timing-day">{t(`day_${d.day_of_week}`)}</span>
+              {d.is_closed ? (
+                <span className="muted small">{t('closed')}</span>
+              ) : (
+                <span className="timing-times">
+                  <input
+                    type="time"
+                    value={d.open_time}
+                    onChange={(e) => updateTiming(d.day_of_week, 'open_time', e.target.value)}
+                    aria-label={`${t(`day_${d.day_of_week}`)} open`}
+                  />
+                  <span>–</span>
+                  <input
+                    type="time"
+                    value={d.close_time}
+                    onChange={(e) => updateTiming(d.day_of_week, 'close_time', e.target.value)}
+                    aria-label={`${t(`day_${d.day_of_week}`)} close`}
+                  />
+                </span>
+              )}
+              <button
+                type="button"
+                className={`switch ${!d.is_closed ? 'on' : ''}`}
+                onClick={() => updateTiming(d.day_of_week, 'is_closed', !d.is_closed)}
+                role="switch"
+                aria-checked={!d.is_closed}
+                aria-label={t(`day_${d.day_of_week}`)}
+              >
+                <span className="knob" />
+              </button>
+            </div>
+          ))}
+          <button
+            type="button"
+            className="btn btn-primary btn-block"
+            onClick={saveTimings}
+            disabled={timingsSaving}
+          >
+            {timingsSaving ? t('saving') : t('save')}
+          </button>
+        </div>
+      )}
     </div>
   )
 }

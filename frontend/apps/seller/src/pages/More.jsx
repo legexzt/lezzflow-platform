@@ -5,6 +5,7 @@ import { signOutUser } from '../firebase.js'
 import Icon from '../components/Icon.jsx'
 import api from '../api.js'
 import { useAlertCtx } from '../components/OrderAlertHost.jsx'
+import { useLang } from '../LanguageContext.jsx'
 
 const SUPPORT_ITEMS = [
   {
@@ -31,6 +32,7 @@ const PACK_MINS = [10, 15, 20]
 export default function More() {
   const { user } = useAuth()
   const alertCtx = useAlertCtx()
+  const { lang, setLang, t } = useLang()
 
   // Live commission config (Item 3): 0 bps during beta.
   const [commissionBps, setCommissionBps] = useState(0)
@@ -71,6 +73,27 @@ export default function More() {
           <Icon name="chart" size={20} />
           <span>Business Advisory</span>
         </Link>
+        <Link to="/offers" className="settings-row">
+          <Icon name="megaphone" size={20} />
+          <span>{t('title_offers')}</span>
+        </Link>
+      </div>
+
+      {/* ---- Language ---- */}
+      <div className="card">
+        <h3 style={{ margin: '0 0 4px', fontSize: 15, fontWeight: 700 }}>{t('language')}</h3>
+        <div className="lang-row">
+          {['en', 'hi', 'hing'].map((l) => (
+            <button
+              key={l}
+              type="button"
+              className={`chip ${lang === l ? 'active' : ''}`}
+              onClick={() => setLang(l)}
+            >
+              {t(`lang_${l}`)}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ---- Order alerts settings (Item 1, §1.4) ---- */}
