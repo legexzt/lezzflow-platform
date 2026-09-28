@@ -88,7 +88,7 @@ async function createOrder(req, res, next) {
   const client = await getClient();
 
   try {
-    const { shop_id, items, fulfillment, total, address } = req.body;
+    const { shop_id, items, fulfillment, total, address, offer_id } = req.body;
 
     if (!shop_id || !items || !fulfillment) {
       return res.status(400).json({
@@ -189,13 +189,46 @@ async function createOrder(req, res, next) {
     }
 
 
+    // --- Dukaan Offer: validate server-side, never trust client discount ---
+    // The client may suggest an offer_id, but the discount is always computed
+    // here from the real shop_offers row (active, in-window, min_order met).
+    let appliedOfferId = null;
+    let appliedDiscount = 0;
+    if (offer_id !== undefined && offer_id !== null && offer_id !== '') {
+      const offerResult = await client.query(
+        `SELECT * FROM shop_offers
+         WHERE id = $1 AND shop_id = $2 AND active = TRUE
+           AND (valid_from IS NULL OR valid_from <= now())
+           AND (valid_to IS NULL OR valid_to >= now())`,
+        [offer_id, shop_id]
+      );
+      if (offerResult.rows.length === 0) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'Offer is not valid for this shop right now.' });
+      }
+      const offer = offerResult.rows[0];
+      const minOrder = Number(offer.min_order) || 0;
+      if (calculatedTotal < minOrder) {
+        await client.query('ROLLBACK');
+        return res
+          .status(400)
+          .json({ error: `This offer needs a minimum order of Rs ${minOrder}.` });
+      }
+      const value = Number(offer.discount_value) || 0;
+      const rawDiscount =
+        offer.discount_type === 'percent' ? (calculatedTotal * value) / 100 : value;
+      appliedDiscount = Math.min(Math.max(rawDiscount, 0), calculatedTotal);
+      appliedOfferId = offer.id;
+      calculatedTotal = Math.max(calculatedTotal - appliedDiscount, 0);
+    }
+
     const itemsJson = typeof items === 'string' ? items : JSON.stringify(items);
 
     const result = await client.query(
-      `INSERT INTO orders (customer_id, shop_id, items, fulfillment, total, address, status)
-       VALUES ($1, $2, $3, $4, $5, $6, 'placed')
+      `INSERT INTO orders (customer_id, shop_id, items, fulfillment, total, address, status, offer_id, discount)
+       VALUES ($1, $2, $3, $4, $5, $6, 'placed', $7, $8)
        RETURNING *`,
-      [req.user.id, shop_id, itemsJson, fulfillment, calculatedTotal, address || null]
+      [req.user.id, shop_id, itemsJson, fulfillment, calculatedTotal, address || null, appliedOfferId, appliedDiscount]
     );
 
     const newOrder = result.rows[0];
@@ -246,10 +279,13 @@ async function listOrders(req, res, next) {
     let result;
     if (req.user.role === 'customer') {
       result = await query(
-        `SELECT o.*, s.name as shop_name 
-         FROM orders o 
-         JOIN shops s ON o.shop_id = s.id 
-         WHERE o.customer_id = $1 
+        `SELECT o.*, s.name as shop_name, su.phone as shop_phone, pu.phone as partner_phone
+         FROM orders o
+         JOIN shops s ON o.shop_id = s.id
+         JOIN users su ON s.seller_id = su.id
+         LEFT JOIN delivery_requests dr ON dr.order_id = o.id
+         LEFT JOIN users pu ON dr.partner_id = pu.id
+         WHERE o.customer_id = $1
          ORDER BY o.id DESC`,
         [req.user.id]
       );

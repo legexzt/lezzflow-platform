@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../api';
 import ShopMap from '../components/ShopMap.jsx';
-import { formatDistance } from '../shopUtils';
+import { formatDistance, cacheCustomerPosition } from '../shopUtils';
 import Icon from '../components/Icon.jsx';
 
 const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru fallback until GPS resolves
@@ -85,6 +85,7 @@ export default function Home() {
         const coords = [pos.coords.latitude, pos.coords.longitude];
         setPosition(coords);
         setLocating(false);
+        cacheCustomerPosition(coords[0], coords[1]);
         fetchDiscovery(coords[0], coords[1]);
       },
       (err) => {
@@ -112,6 +113,7 @@ export default function Home() {
       setLocationError('');
       setManualError('');
       setShowManualLocation(false);
+      cacheCustomerPosition(lat, lng);
       fetchDiscovery(lat, lng);
     },
     [fetchDiscovery]

@@ -207,4 +207,84 @@ module.exports = {
   getProductById,
   updateProduct,
   deleteProduct,
+  compareProducts,
 };
+
+/**
+ * Normalize a product name for same-item matching across shops:
+ * lowercase, trim, collapse inner whitespace.
+ */
+function normalizeProductName(name) {
+  return String(name || '')
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, ' ');
+}
+
+/**
+ * GET /api/v1/products/compare?shop_id=<id>&name=<product name>&lat=<lat>&lng=<lng>
+ * Returns the same-named product stocked at OTHER open, live shops,
+ * each with its real price and real distance_km from (lat, lng),
+ * sorted by price ascending. Public — no auth required.
+ * Distance is computed with the haversine formula in JS so the endpoint
+ * works identically on production PostGIS and the pg-mem test runner.
+ */
+async function compareProducts(req, res, next) {
+  try {
+    const shopId = parseInt(req.query.shop_id, 10);
+    const name = normalizeProductName(req.query.name);
+    const lat = parseFloat(req.query.lat);
+    const lng = parseFloat(req.query.lng);
+
+    if (!Number.isFinite(shopId) || !name) {
+      return res.status(400).json({ error: 'shop_id and name query params are required' });
+    }
+    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+      return res.status(400).json({ error: 'lat and lng query params are required' });
+    }
+
+    const result = await query(
+      `SELECT p.id AS product_id, p.name, p.price, p.stock,
+              s.id AS shop_id, s.name AS shop_name, s.address AS shop_address,
+              s.lat AS shop_lat, s.lng AS shop_lng
+       FROM products p
+       JOIN shops s ON s.id = p.shop_id
+       WHERE p.shop_id <> $1
+         AND s.is_open = TRUE
+         AND s.is_live = TRUE
+         AND p.stock > 0
+         AND lower(regexp_replace(trim(p.name), '\\s+', ' ', 'g')) = $2
+       ORDER BY p.price ASC
+       LIMIT 4`,
+      [shopId, name]
+    );
+
+    return res.json(
+      result.rows.map((r) => ({
+        product_id: r.product_id,
+        name: r.name,
+        price: r.price,
+        stock: r.stock,
+        shop_id: r.shop_id,
+        shop_name: r.shop_name,
+        shop_address: r.shop_address,
+        distance_km: haversineKm(lat, lng, Number(r.shop_lat), Number(r.shop_lng)),
+      }))
+    );
+  } catch (error) {
+    next(error);
+  }
+}
+
+/** Great-circle distance in kilometres between two lat/lng points. */
+function haversineKm(lat1, lng1, lat2, lng2) {
+  if (![lat1, lng1, lat2, lng2].every(Number.isFinite)) return null;
+  const R = 6371;
+  const toRad = (d) => (d * Math.PI) / 180;
+  const dLat = toRad(lat2 - lat1);
+  const dLng = toRad(lng2 - lng1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLng / 2) * Math.sin(dLng / 2);
+  return 2 * R * Math.asin(Math.sqrt(a));
+}

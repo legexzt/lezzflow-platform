@@ -15,10 +15,12 @@ const advisoryRoutes = require('./advisoryRoutes');
 const partnerRoutes = require('./partnerRoutes');
 const onboardingRoutes = require('./onboardingRoutes');
 const configRoutes = require('./configRoutes');
+const offerRoutes = require('./offerRoutes');
 
 // Mount sub-routes under /api
 router.use('/auth', authRoutes);
 router.use('/shops', shopRoutes);
+router.use('/shops', offerRoutes); // /api/shops/:id/offers (+ /api/v1 mirror)
 router.use('/products', productRoutes);
 router.use('/discover', discoverRoutes);
 router.use('/orders', orderRoutes);

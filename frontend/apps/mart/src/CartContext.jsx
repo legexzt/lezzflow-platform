@@ -58,6 +58,17 @@ export function CartProvider({ children }) {
     });
   };
 
+  // Replace a cart item's product snapshot with live data from the server
+  // (used by checkout revalidation when the price changed).
+  const refreshItemProduct = (productId, liveProduct) => {
+    setState((prev) => ({
+      ...prev,
+      items: prev.items.map((i) =>
+        i.product.id === productId ? { ...i, product: { ...i.product, ...liveProduct } } : i
+      ),
+    }));
+  };
+
   const removeItem = (productId) => setQuantity(productId, 0);
 
   const clear = () => setState(EMPTY);
@@ -82,6 +93,7 @@ export function CartProvider({ children }) {
     addItem,
     setQuantity,
     removeItem,
+    refreshItemProduct,
     clear,
   };
 

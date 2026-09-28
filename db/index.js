@@ -51,6 +51,16 @@ function createMemPool() {
       return i === -1 ? 0 : i + 1; // 1-based like Postgres
     },
   });
+  memDb.public.registerFunction({
+    name: 'regexp_replace',
+    args: [DataType.text, DataType.text, DataType.text, DataType.text],
+    returns: DataType.text,
+    implementation: (str, pattern, replacement, flags) => {
+      if (str == null || pattern == null) return null;
+      const re = new RegExp(String(pattern), String(flags || '').includes('g') ? 'g' : '');
+      return String(str).replace(re, String(replacement ?? ''));
+    },
+  });
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   for (const file of files) {
