@@ -210,6 +210,42 @@ describe('Scan Endpoints (AI & Barcode) Mocked Tests', () => {
       }
     }, 5000);
 
+    it('should not emit an unhandled rejection when send rejects after the timeout wins', async () => {
+      const originalTimeout = process.env.BEDROCK_TIMEOUT_MS;
+      process.env.BEDROCK_TIMEOUT_MS = '50';
+
+      const unhandled = [];
+      const onUnhandled = (reason) => unhandled.push(reason);
+      process.on('unhandledRejection', onUnhandled);
+
+      // send() rejects AFTER the 50ms timeout wins the race — simulates an
+      // aborted SDK call settling late, which must not crash the process.
+      jest
+        .spyOn(bedrockClient, 'send')
+        .mockImplementation(
+          () => new Promise((_, reject) => setTimeout(() => reject(new Error('aborted by test')), 150))
+        );
+
+      const res = await request(app)
+        .post('/api/scan/ai')
+        .attach('image', fakeImageBuffer, { filename: 'late-reject.jpg', contentType: 'image/jpeg' });
+
+      expect(res.status).toBe(502);
+      expect(res.body.details).toContain('AI product scan timed out after 50ms');
+
+      // Give the late rejection time to surface if it were unhandled
+      await new Promise((resolve) => setTimeout(resolve, 300));
+      process.removeListener('unhandledRejection', onUnhandled);
+
+      expect(unhandled).toHaveLength(0);
+
+      if (originalTimeout === undefined) {
+        delete process.env.BEDROCK_TIMEOUT_MS;
+      } else {
+        process.env.BEDROCK_TIMEOUT_MS = originalTimeout;
+      }
+    }, 10000);
+
     it('should not leave lingering timers when send resolves successfully', async () => {
       const mockBedrockResponse = {
         output: {
