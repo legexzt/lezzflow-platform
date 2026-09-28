@@ -19,6 +19,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import api, { getErrorMessage } from '../api.js'
+import { goLiveShop } from '../api/onboarding.js'
 import { useToast } from './Toast.jsx'
 import Icon from './Icon.jsx'
 import { useAlertCtx } from './OrderAlertHost.jsx'
@@ -167,8 +168,12 @@ export default function ChecklistCard({ shop, productCount, onGoLive }) {
       const shops = Array.isArray(shopRes.data) ? shopRes.data : shopRes.data?.shops || []
       const s = shops[0]
       if (s) {
-        await api.put(`/shops/${s.id}`, { isLive: true })
-        toast("You're live. Customers can now see your shop.", 'success')
+        const updated = await goLiveShop(s.id)
+        if (updated?.already_live) {
+          toast('Your shop is already live.', 'info')
+        } else {
+          toast("You're live. Customers can now see your shop.", 'success')
+        }
         setGoLiveSheet(false)
         if (onGoLive) onGoLive()
         try {
@@ -176,7 +181,12 @@ export default function ChecklistCard({ shop, productCount, onGoLive }) {
         } catch (_) {}
       }
     } catch (err) {
-      toast(getErrorMessage(err, 'Could not go live — try again.'), 'error')
+      const reasons = err?.response?.data?.reasons
+      if (err?.response?.status === 422 && Array.isArray(reasons) && reasons.length) {
+        toast('Not ready yet: ' + reasons.join('; '), 'error')
+      } else {
+        toast(getErrorMessage(err, 'Could not go live — try again.'), 'error')
+      }
     } finally {
       setGoLiveBusy(false)
     }
