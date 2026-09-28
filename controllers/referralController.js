@@ -91,9 +91,33 @@ async function listMyReferrals(req, res, next) {
   }
 }
 
+/**
+ * GET /api/admin/referrals
+ * Admin: all partner referrals with referrer and referred names, latest first, capped at 200.
+ */
+async function listAdminReferrals(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT pr.*,
+              u1.name AS referrer_name,
+              u2.name AS referred_name,
+              u2.created_at AS referred_user_created_at
+       FROM partner_referrals pr
+       JOIN users u1 ON u1.id = pr.referrer_partner_id
+       JOIN users u2 ON u2.id = pr.referred_partner_id
+       ORDER BY pr.created_at DESC
+       LIMIT 200`
+    );
+    return res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   claimReferral,
   listMyReferrals,
+  listAdminReferrals,
   encodeReferralCode,
   decodeReferralCode,
 };

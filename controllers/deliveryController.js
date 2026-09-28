@@ -236,11 +236,40 @@ async function updateDeliveryRequestStatus(req, res, next) {
   }
 }
 
+/**
+ * PATCH /api/admin/sos-alerts/:id
+ * Admin: acknowledge or resolve an SOS alert.
+ */
+async function updateSosAlert(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['acknowledged', 'resolved'].includes(status)) {
+      return res.status(400).json({ error: "status must be 'acknowledged' or 'resolved'" });
+    }
+
+    const existing = await query('SELECT * FROM sos_alerts WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'SOS alert not found' });
+    }
+
+    const result = await query(
+      `UPDATE sos_alerts SET status = $1 WHERE id = $2 RETURNING *`,
+      [status, id]
+    );
+    return res.json(result.rows[0]);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   listDeliveryRequests,
   updateDeliveryRequestStatus,
   sendSosAlert,
   listSosAlerts,
+  updateSosAlert,
   checkPartnerKycApproved,
   isValidDeliveryStatusTransition,
   PARTNER_LEGAL_TRANSITIONS,

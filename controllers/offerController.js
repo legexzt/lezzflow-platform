@@ -157,8 +157,28 @@ async function updateOffer(req, res, next) {
   }
 }
 
+/**
+ * GET /api/admin/offers
+ * Admin: all shop offers joined with shop name, latest first, capped at 200.
+ */
+async function listAdminOffers(req, res, next) {
+  try {
+    const result = await query(
+      `SELECT so.*, s.name AS shop_name
+       FROM shop_offers so
+       JOIN shops s ON s.id = so.shop_id
+       ORDER BY so.created_at DESC
+       LIMIT 200`
+    );
+    return res.json(result.rows);
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   createOffer,
   listOffers,
   updateOffer,
+  listAdminOffers,
 };

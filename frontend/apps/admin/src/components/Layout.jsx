@@ -10,6 +10,11 @@ const NAV_ITEMS = [
   { to: '/products', label: 'Products', icon: 'cart' },
   { to: '/kyc', label: 'KYC Review', icon: 'idcard' },
   { to: '/analytics', label: 'Locality analytics', icon: 'location' },
+  { to: '/sos', label: 'SOS Alerts', icon: 'warning' },
+  { to: '/audit', label: 'Audit Log', icon: 'receipt' },
+  { to: '/funnel', label: 'Onboarding Funnel', icon: 'chart' },
+  { to: '/offers', label: 'Offers', icon: 'bag' },
+  { to: '/referrals', label: 'Referrals', icon: 'users' },
 ];
 
 export default function Layout({ children }) {

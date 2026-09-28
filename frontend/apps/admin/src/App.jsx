@@ -11,6 +11,11 @@ import Users from './pages/Users.jsx';
 import Products from './pages/Products.jsx';
 import Kyc from './pages/Kyc.jsx';
 import LocalityAnalytics from './pages/LocalityAnalytics.jsx';
+import SOS from './pages/SOS.jsx';
+import Audit from './pages/Audit.jsx';
+import Funnel from './pages/Funnel.jsx';
+import Offers from './pages/Offers.jsx';
+import Referrals from './pages/Referrals.jsx';
 
 export default function App() {
   const { firebaseUser, role, loading, verifyError } = useAuth();
@@ -38,6 +43,11 @@ export default function App() {
         <Route path="/products" element={<Products />} />
         <Route path="/kyc" element={<Kyc />} />
         <Route path="/analytics" element={<LocalityAnalytics />} />
+        <Route path="/sos" element={<SOS />} />
+        <Route path="/audit" element={<Audit />} />
+        <Route path="/funnel" element={<Funnel />} />
+        <Route path="/offers" element={<Offers />} />
+        <Route path="/referrals" element={<Referrals />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>
