@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import api from '../api.js';
 import { Loading, ErrorState, EmptyState } from '../components/States.jsx';
-import { errMsg, prettify } from '../utils.js';
+import { asArray, errMsg, prettify } from '../utils.js';
 
 const KNOWN_CARDS = [
   { keys: ['users', 'totalUsers', 'total_users'], label: 'Users', icon: 'users' },
@@ -33,20 +33,100 @@ function pick(obj, keys) {
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const [attention, setAttention] = useState({
+    pendingKyc: 0,
+    stuckOrders: 0,
+    emptyShops: 0,
+    emptyShopsSampled: false,
+    unassignedDeliveries: 0,
+  });
+  const [stripFailed, setStripFailed] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   const load = async () => {
     setLoading(true);
     setError(null);
-    try {
-      const res = await api.get('/admin/stats');
-      setStats(res.data || {});
-    } catch (err) {
-      setError(errMsg(err, 'Could not load platform stats.'));
-    } finally {
-      setLoading(false);
+    setStripFailed(false);
+
+    const [statsRes, placedRes, packedRes, shopsRes, productsRes, deliveryRes] =
+      await Promise.allSettled([
+        api.get('/admin/stats'),
+        api.get('/admin/orders', { params: { status: 'placed', limit: 100 } }),
+        api.get('/admin/orders', { params: { status: 'packed', limit: 100 } }),
+        api.get('/admin/shops', { params: { limit: 100 } }),
+        api.get('/admin/products', { params: { limit: 100 } }),
+        api.get('/delivery/requests'),
+      ]);
+
+    if (statsRes.status === 'fulfilled') {
+      setStats(statsRes.value?.data || {});
+    } else {
+      setError(errMsg(statsRes.reason, 'Could not load platform stats.'));
     }
+
+    let hasFailure = false;
+    let pendingKycCount = 0;
+    if (statsRes.status === 'fulfilled') {
+      const s = statsRes.value?.data || {};
+      pendingKycCount = asNumber(s.pendingKyc) ?? asNumber(s.pending_kyc) ?? 0;
+    } else {
+      hasFailure = true;
+    }
+
+    let stuckCount = 0;
+    if (placedRes.status === 'fulfilled' || packedRes.status === 'fulfilled') {
+      const now = Date.now();
+      const thresholdMs = 30 * 60 * 1000;
+      const placed =
+        placedRes.status === 'fulfilled' ? asArray(placedRes.value?.data, ['orders']) : [];
+      const packed =
+        packedRes.status === 'fulfilled' ? asArray(packedRes.value?.data, ['orders']) : [];
+      const combined = [...placed, ...packed];
+      stuckCount = combined.filter((o) => {
+        const t = new Date(o.created_at || o.createdAt).getTime();
+        return !isNaN(t) && now - t >= thresholdMs;
+      }).length;
+      if (placedRes.status === 'rejected' || packedRes.status === 'rejected') {
+        hasFailure = true;
+      }
+    } else {
+      hasFailure = true;
+    }
+
+    let emptyShopsCount = 0;
+    let isProductsSampled = false;
+    if (shopsRes.status === 'fulfilled' && productsRes.status === 'fulfilled') {
+      const shopsList = asArray(shopsRes.value?.data, ['shops']);
+      const productsList = asArray(productsRes.value?.data, ['products']);
+      const productShopIds = new Set(
+        productsList.map((p) => p.shop_id || p.shop?.id).filter(Boolean)
+      );
+      emptyShopsCount = shopsList.filter((s) => !productShopIds.has(s.id)).length;
+      const totalProducts = productsRes.value?.data?.pagination?.total;
+      isProductsSampled = typeof totalProducts === 'number' && totalProducts > productsList.length;
+    } else {
+      hasFailure = true;
+    }
+
+    let unassignedDeliveriesCount = 0;
+    if (deliveryRes.status === 'fulfilled') {
+      const deliveryList = asArray(deliveryRes.value?.data, ['requests']);
+      unassignedDeliveriesCount = deliveryList.length;
+    } else {
+      hasFailure = true;
+    }
+
+    setAttention({
+      pendingKyc: pendingKycCount,
+      stuckOrders: stuckCount,
+      emptyShops: emptyShopsCount,
+      emptyShopsSampled: isProductsSampled,
+      unassignedDeliveries: unassignedDeliveriesCount,
+    });
+    setStripFailed(hasFailure);
+
+    setLoading(false);
   };
 
   useEffect(() => {
@@ -74,12 +154,72 @@ export default function Dashboard() {
     }
   }
 
+  const allClear =
+    attention.pendingKyc === 0 &&
+    attention.stuckOrders === 0 &&
+    attention.emptyShops === 0 &&
+    attention.unassignedDeliveries === 0;
+
   return (
     <div className="page">
       <header className="page-header">
         <h1>Dashboard</h1>
         <p>Platform overview</p>
       </header>
+
+      <section className="attention-section">
+        <h2>Needs attention</h2>
+        {stripFailed && <p className="attention-note">Could not load attention items.</p>}
+        {allClear ? (
+          <div className="attention-tile is-clear">
+            <span className="attention-icon"><Icon name="check" size={24} /></span>
+            <span className="attention-label">All clear — nothing needs attention right now.</span>
+          </div>
+        ) : (
+          <div className="attention-strip">
+            <Link
+              to="/kyc"
+              className={`attention-tile ${attention.pendingKyc === 0 ? 'is-zero' : ''}`}
+            >
+              <span className="attention-icon"><Icon name="idcard" size={22} /></span>
+              <span className="attention-count">{attention.pendingKyc}</span>
+              <span className="attention-label">Pending KYC</span>
+              <span className="attention-sub">awaiting review</span>
+            </Link>
+
+            <Link
+              to="/orders?stuck=30"
+              className={`attention-tile ${attention.stuckOrders === 0 ? 'is-zero' : ''}`}
+            >
+              <span className="attention-icon"><Icon name="warning" size={22} /></span>
+              <span className="attention-count">{attention.stuckOrders}</span>
+              <span className="attention-label">Stuck orders</span>
+              <span className="attention-sub">in placed/packed 30+ min</span>
+            </Link>
+
+            <Link
+              to="/shops?empty=1"
+              className={`attention-tile ${attention.emptyShops === 0 ? 'is-zero' : ''}`}
+              title={attention.emptyShopsSampled ? 'Counts sampled from loaded products' : undefined}
+            >
+              <span className="attention-icon"><Icon name="home" size={22} /></span>
+              <span className="attention-count">{attention.emptyShops}</span>
+              <span className="attention-label">Shops with zero products</span>
+              <span className="attention-sub">no products listed</span>
+            </Link>
+
+            <Link
+              to="/orders?attention=unassigned"
+              className={`attention-tile ${attention.unassignedDeliveries === 0 ? 'is-zero' : ''}`}
+            >
+              <span className="attention-icon"><Icon name="scooter" size={22} /></span>
+              <span className="attention-count">{attention.unassignedDeliveries}</span>
+              <span className="attention-label">Deliveries awaiting partner</span>
+              <span className="attention-sub">no partner assigned</span>
+            </Link>
+          </div>
+        )}
+      </section>
 
       {cards.length === 0 ? (
         <EmptyState message="No stats available yet." />

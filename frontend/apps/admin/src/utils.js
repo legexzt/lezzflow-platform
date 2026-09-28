@@ -82,3 +82,11 @@ export function prettify(key) {
     .replace(/[_-]+/g, ' ')
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
+
+export const REJECT_REASON_LABELS = {
+  blurry_doc: 'Blurry / unreadable document',
+  name_mismatch: 'Name mismatch',
+  expired: 'Expired document',
+  duplicate: 'Duplicate submission',
+};
+

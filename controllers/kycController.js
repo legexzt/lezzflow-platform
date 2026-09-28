@@ -1,4 +1,7 @@
 const { query } = require('../db');
+const { logAdminAction } = require('./auditController');
+
+const REJECT_REASON_CODES = ['blurry_doc', 'name_mismatch', 'expired', 'duplicate'];
 
 /**
  * POST /api/kyc
@@ -27,6 +30,8 @@ async function submitKyc(req, res, next) {
              pan_url = COALESCE($2, pan_url),
              license_url = COALESCE($3, license_url),
              status = 'pending',
+             reupload_requested = false,
+             reupload_requested_at = NULL,
              updated_at = CURRENT_TIMESTAMP
          WHERE partner_id = $4
          RETURNING *`,
@@ -75,7 +80,7 @@ async function listPendingKyc(req, res, next) {
       `SELECT pk.*, u.name as partner_name, u.phone as partner_phone, u.firebase_uid
        FROM partner_kyc pk
        JOIN users u ON pk.partner_id = u.id
-       WHERE pk.status = 'pending'
+       WHERE pk.status = 'pending' AND pk.reupload_requested = false
        ORDER BY pk.id ASC`
     );
 
@@ -100,11 +105,38 @@ async function approveKyc(req, res, next) {
 
     const result = await query(
       `UPDATE partner_kyc
-       SET status = 'approved', updated_at = CURRENT_TIMESTAMP
+       SET status = 'approved',
+           reject_reason_code = NULL,
+           reject_note = NULL,
+           reupload_requested = false,
+           reupload_requested_at = NULL,
+           updated_at = CURRENT_TIMESTAMP
        WHERE id = $1
        RETURNING *`,
       [id]
     );
+
+    const partnerId = result.rows[0].partner_id;
+    let partnerName = null;
+    try {
+      const userRes = await query('SELECT name FROM users WHERE id = $1', [partnerId]);
+      if (userRes.rows.length > 0) partnerName = userRes.rows[0].name;
+    } catch (e) {
+      console.error('Failed to look up partner name:', e);
+    }
+
+    try {
+      await logAdminAction({
+        actorUid: req.firebaseUser && req.firebaseUser.uid,
+        actorName: req.user && req.user.name,
+        action: 'kyc_approve',
+        entityType: 'kyc',
+        entityId: String(id),
+        details: { partner_id: partnerId, partner_name: partnerName },
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed for kyc_approve:', auditErr);
+    }
 
     return res.json({
       message: 'KYC approved successfully',
@@ -122,6 +154,13 @@ async function approveKyc(req, res, next) {
 async function rejectKyc(req, res, next) {
   try {
     const { id } = req.params;
+    const { reason_code, note } = req.body || {};
+
+    if (reason_code && !REJECT_REASON_CODES.includes(reason_code)) {
+      return res.status(400).json({
+        error: `Invalid reason_code. Must be one of: ${REJECT_REASON_CODES.join(', ')}`,
+      });
+    }
 
     const existing = await query('SELECT * FROM partner_kyc WHERE id = $1', [id]);
     if (existing.rows.length === 0) {
@@ -130,14 +169,117 @@ async function rejectKyc(req, res, next) {
 
     const result = await query(
       `UPDATE partner_kyc
-       SET status = 'rejected', updated_at = CURRENT_TIMESTAMP
-       WHERE id = $1
+       SET status = 'rejected',
+           reject_reason_code = $1,
+           reject_note = $2,
+           reupload_requested = false,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
        RETURNING *`,
-      [id]
+      [reason_code || null, (note && note.trim()) || null, id]
     );
+
+    const partnerId = result.rows[0].partner_id;
+    let partnerName = null;
+    try {
+      const userRes = await query('SELECT name FROM users WHERE id = $1', [partnerId]);
+      if (userRes.rows.length > 0) partnerName = userRes.rows[0].name;
+    } catch (e) {
+      console.error('Failed to look up partner name:', e);
+    }
+
+    try {
+      await logAdminAction({
+        actorUid: req.firebaseUser && req.firebaseUser.uid,
+        actorName: req.user && req.user.name,
+        action: 'kyc_reject',
+        entityType: 'kyc',
+        entityId: String(id),
+        details: {
+          partner_id: partnerId,
+          partner_name: partnerName,
+          reason_code: reason_code || null,
+          note: (note && note.trim()) || null,
+        },
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed for kyc_reject:', auditErr);
+    }
 
     return res.json({
       message: 'KYC rejected',
+      kyc: result.rows[0],
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/admin/kyc/:id/request-reupload
+ * Admin requests partner to re-upload KYC documents
+ */
+async function requestReupload(req, res, next) {
+  try {
+    const { id } = req.params;
+    const { reason_code, note } = req.body || {};
+
+    if (reason_code && !REJECT_REASON_CODES.includes(reason_code)) {
+      return res.status(400).json({
+        error: `Invalid reason_code. Must be one of: ${REJECT_REASON_CODES.join(', ')}`,
+      });
+    }
+
+    const existing = await query('SELECT * FROM partner_kyc WHERE id = $1', [id]);
+    if (existing.rows.length === 0) {
+      return res.status(404).json({ error: 'KYC record not found' });
+    }
+
+    if (existing.rows[0].status === 'approved') {
+      return res.status(400).json({ error: 'Cannot request reupload for already approved KYC' });
+    }
+
+    const result = await query(
+      `UPDATE partner_kyc
+       SET reupload_requested = true,
+           reupload_requested_at = CURRENT_TIMESTAMP,
+           reject_reason_code = $1,
+           reject_note = $2,
+           updated_at = CURRENT_TIMESTAMP
+       WHERE id = $3
+       RETURNING *`,
+      [reason_code || null, (note && note.trim()) || null, id]
+    );
+
+    const partnerId = result.rows[0].partner_id;
+    let partnerName = null;
+    try {
+      const userRes = await query('SELECT name FROM users WHERE id = $1', [partnerId]);
+      if (userRes.rows.length > 0) partnerName = userRes.rows[0].name;
+    } catch (e) {
+      console.error('Failed to look up partner name:', e);
+    }
+
+    try {
+      await logAdminAction({
+        actorUid: req.firebaseUser && req.firebaseUser.uid,
+        actorName: req.user && req.user.name,
+        action: 'kyc_reupload_requested',
+        entityType: 'kyc',
+        entityId: String(id),
+        details: {
+          partner_id: partnerId,
+          partner_name: partnerName,
+          reason_code: reason_code || null,
+          note: (note && note.trim()) || null,
+        },
+      });
+    } catch (auditErr) {
+      console.error('Audit logging failed for kyc_reupload_requested:', auditErr);
+    }
+
+    return res.json({
+      message: 'Re-upload requested successfully',
       kyc: result.rows[0],
     });
   } catch (error) {
@@ -151,4 +293,6 @@ module.exports = {
   listPendingKyc,
   approveKyc,
   rejectKyc,
+  requestReupload,
+  REJECT_REASON_CODES,
 };

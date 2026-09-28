@@ -12,7 +12,7 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout({ children }) {
-  const { backendUser, firebaseUser, logout } = useAuth();
+  const { backendUser, firebaseUser, isOpsViewer, logout } = useAuth();
   const displayName =
     backendUser?.name || firebaseUser?.displayName || firebaseUser?.email || 'Admin';
 
@@ -39,7 +39,13 @@ export default function Layout({ children }) {
         <div className="sidebar-footer">
           <div className="sidebar-user">
             <span className="sidebar-user-name">{displayName}</span>
-            <span className="sidebar-user-role">Administrator</span>
+            {isOpsViewer ? (
+              <span className="badge badge-amber" style={{ alignSelf: 'flex-start' }}>
+                Ops viewer · read-only
+              </span>
+            ) : (
+              <span className="sidebar-user-role">Administrator</span>
+            )}
           </div>
           <button className="btn btn-outline btn-block" onClick={logout} type="button">
             Sign out

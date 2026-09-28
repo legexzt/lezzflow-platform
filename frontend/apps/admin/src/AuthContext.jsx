@@ -9,6 +9,7 @@ export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [backendUser, setBackendUser] = useState(null);
   const [role, setRole] = useState(null);
+  const [isOpsViewer, setIsOpsViewer] = useState(false);
   const [loading, setLoading] = useState(true);
   const [verifyError, setVerifyError] = useState(null);
   const [loginError, setLoginError] = useState(null);
@@ -22,9 +23,17 @@ export function AuthProvider({ children }) {
       const resolvedRole = data.role || (data.user && data.user.role) || null;
       setRole(resolvedRole);
       setBackendUser(data.user || null);
+
+      try {
+        const tr = await user.getIdTokenResult();
+        setIsOpsViewer(tr && tr.claims && tr.claims.ops_viewer === true);
+      } catch {
+        setIsOpsViewer(false);
+      }
     } catch (err) {
       setRole(null);
       setBackendUser(null);
+      setIsOpsViewer(false);
       setVerifyError(
         err?.response?.data?.error ||
           err?.response?.data?.message ||
@@ -43,6 +52,7 @@ export function AuthProvider({ children }) {
       } else {
         setRole(null);
         setBackendUser(null);
+        setIsOpsViewer(false);
         setVerifyError(null);
       }
       setLoading(false);
@@ -63,6 +73,7 @@ export function AuthProvider({ children }) {
 
   const logout = async () => {
     await signOut(auth);
+    setIsOpsViewer(false);
   };
 
   const retryVerify = () => {
@@ -75,6 +86,7 @@ export function AuthProvider({ children }) {
     firebaseUser,
     backendUser,
     role,
+    isOpsViewer,
     loading,
     verifyError,
     loginError,
