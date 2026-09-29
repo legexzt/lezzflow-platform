@@ -117,4 +117,44 @@ export async function claimReferral(code) {
   return data;
 }
 
+// ---- Cycle-3: trip chips, disputes, reliability, recap ----
+
+export async function cancelTrip(id) {
+  const { data } = await api.patch(`/delivery/requests/${id}`, { status: 'cancelled' });
+  return data;
+}
+
+export async function addTripNote(id, chip) {
+  const { data } = await api.post(`/delivery/requests/${id}/trip-notes`, { chip });
+  return data;
+}
+
+export async function fetchTripTimeline(id) {
+  const { data } = await api.get(`/delivery/requests/${id}/timeline`);
+  return data;
+}
+
+export async function openDispute(deliveryRequestId, note) {
+  const { data } = await api.post('/delivery/disputes', {
+    delivery_request_id: deliveryRequestId,
+    note: note || undefined,
+  });
+  return data;
+}
+
+export async function fetchMyDisputes() {
+  const { data } = await api.get('/delivery/disputes');
+  return data;
+}
+
+export async function fetchReliability() {
+  const { data } = await api.get('/delivery/reliability');
+  return data;
+}
+
+export async function fetchRecap() {
+  const { data } = await api.get('/delivery/recap');
+  return data;
+}
+
 export default api;

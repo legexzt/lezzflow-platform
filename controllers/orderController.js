@@ -76,6 +76,27 @@ async function transitionOrder(client, orderId, targetStatus, role) {
     throw err;
   }
 
+  // Partner cycle-3: a cancelled order must not silently strand the partner's
+  // trip. Mark the linked delivery request cancelled (cancelled_by='order')
+  // and log a backend-verified event, so the partner sees it in their
+  // Cancelled section instead of watching the trip vanish.
+  if (targetStatus === 'cancelled') {
+    const drRes = await client.query(
+      `UPDATE delivery_requests
+       SET status = 'cancelled', cancelled_by = 'order', updated_at = CURRENT_TIMESTAMP
+       WHERE order_id = $1 AND status IN ('requested', 'accepted', 'picked')
+       RETURNING id, partner_id`,
+      [orderId]
+    );
+    for (const dr of drRes.rows) {
+      await client.query(
+        `INSERT INTO delivery_events (delivery_request_id, partner_id, event, meta)
+         VALUES ($1, $2, 'cancelled', $3)`,
+        [dr.id, dr.partner_id, JSON.stringify({ by: 'order', order_status: 'cancelled' })]
+      );
+    }
+  }
+
   return updated.rows[0];
 }
 

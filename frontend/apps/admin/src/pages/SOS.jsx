@@ -27,6 +27,14 @@ export default function SOS() {
   const [actionId, setActionId] = useState(null);
   const [notice, setNotice] = useState(null);
 
+  // Cycle-3: travel disputes ("I already travelled")
+  const [disputes, setDisputes] = useState([]);
+  const [disputeFilter, setDisputeFilter] = useState('open');
+  const [disputesLoading, setDisputesLoading] = useState(true);
+  const [disputesError, setDisputesError] = useState(null);
+  const [resolvingId, setResolvingId] = useState(null);
+  const [goodwill, setGoodwill] = useState({});
+
   const load = useCallback(async () => {
     setError(null);
     try {
@@ -45,6 +53,46 @@ export default function SOS() {
     const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
   }, [load]);
+
+  const loadDisputes = useCallback(async () => {
+    setDisputesError(null);
+    setDisputesLoading(true);
+    try {
+      const res = await api.get('/delivery/disputes', { params: { status: disputeFilter } });
+      const data = res.data;
+      setDisputes(Array.isArray(data) ? data : data?.disputes ?? []);
+    } catch (err) {
+      setDisputesError(errMsg(err, 'Could not load travel disputes.'));
+    } finally {
+      setDisputesLoading(false);
+    }
+  }, [disputeFilter]);
+
+  useEffect(() => {
+    loadDisputes();
+  }, [loadDisputes]);
+
+  const handleResolveDispute = async (dispute, status) => {
+    setResolvingId(dispute.id);
+    setNotice(null);
+    try {
+      const payload = { status };
+      const gw = goodwill[dispute.id];
+      if (status === 'approved' && gw !== undefined && gw !== '') {
+        payload.goodwill_amount = Number(gw);
+      }
+      const res = await api.patch(`/delivery/disputes/${dispute.id}`, payload);
+      const updated = res.data ?? { ...dispute, status };
+      setDisputes((prev) =>
+        disputeFilter === 'open' ? prev.filter((d) => d.id !== dispute.id) : prev.map((d) => (d.id === dispute.id ? updated : d)),
+      );
+      setNotice({ type: 'success', text: `Dispute ${status}.` });
+    } catch (err) {
+      setNotice({ type: 'error', text: errMsg(err, 'Could not resolve dispute.') });
+    } finally {
+      setResolvingId(null);
+    }
+  };
 
   const handleAction = async (alert, status) => {
     setActionId(alert.id);
@@ -156,6 +204,97 @@ export default function SOS() {
                         {busy ? 'Working…' : 'Resolve'}
                       </button>
                     )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Cycle-3: travel disputes */}
+      <header className="page-header" style={{ marginTop: 32 }}>
+        <h1>Travel Disputes</h1>
+        <p>“I already travelled” — partners disputing trips cancelled by the customer/shop</p>
+      </header>
+
+      <div className="kyc-actions" style={{ marginBottom: 12 }}>
+        {['open', 'approved', 'rejected'].map((s) => (
+          <button
+            key={s}
+            type="button"
+            className={disputeFilter === s ? 'btn btn-primary' : 'btn btn-outline'}
+            onClick={() => setDisputeFilter(s)}
+          >
+            {s[0].toUpperCase() + s.slice(1)}
+          </button>
+        ))}
+      </div>
+
+      {disputesLoading ? (
+        <Loading message="Loading disputes…" />
+      ) : disputesError ? (
+        <ErrorState message={disputesError} onRetry={loadDisputes} />
+      ) : disputes.length === 0 ? (
+        <EmptyState message={`No ${disputeFilter} disputes.`} />
+      ) : (
+        <div className="kyc-list">
+          {disputes.map((d) => {
+            const busy = resolvingId === d.id;
+            return (
+              <div className="kyc-card" key={d.id}>
+                <div className="kyc-head">
+                  <h3>{d.partner_name || 'Unknown partner'}</h3>
+                  <p>
+                    {formatDateTime(d.created_at)}
+                    {' · '}
+                    {timeAgo(d.created_at)}
+                  </p>
+                </div>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 12 }}>
+                  <span style={{ fontSize: 14 }}>
+                    Order #{d.order_id} · cancelled by {d.cancelled_by === 'order' ? 'customer/shop' : d.cancelled_by}
+                  </span>
+                  {d.note && (
+                    <span style={{ fontSize: 14 }}>
+                      <strong>Partner note:</strong> {d.note}
+                    </span>
+                  )}
+                  {d.status !== 'open' && (
+                    <span style={{ fontSize: 13, color: 'var(--muted)' }}>
+                      {d.status}
+                      {d.goodwill_amount ? ` · goodwill ₹${Number(d.goodwill_amount).toFixed(2)}` : ''}
+                    </span>
+                  )}
+                </div>
+                {!isOpsViewer && d.status === 'open' && (
+                  <div className="kyc-actions">
+                    <input
+                      type="number"
+                      min="0"
+                      step="1"
+                      placeholder="Goodwill ₹ (optional)"
+                      value={goodwill[d.id] ?? ''}
+                      onChange={(e) => setGoodwill((prev) => ({ ...prev, [d.id]: e.target.value }))}
+                      style={{ width: 170 }}
+                      disabled={busy}
+                    />
+                    <button
+                      className="btn btn-primary"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => handleResolveDispute(d, 'approved')}
+                    >
+                      {busy ? 'Working…' : 'Approve'}
+                    </button>
+                    <button
+                      className="btn btn-outline"
+                      type="button"
+                      disabled={busy}
+                      onClick={() => handleResolveDispute(d, 'rejected')}
+                    >
+                      {busy ? 'Working…' : 'Reject'}
+                    </button>
                   </div>
                 )}
               </div>

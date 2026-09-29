@@ -7,15 +7,30 @@ import TrainingPrimer from '../components/TrainingPrimer';
 import { useLang } from '../i18n.jsx';
 import {
   acceptDelivery,
+  addTripNote,
+  cancelTrip,
   claimReferral,
   fetchDeliveryRequests,
+  fetchMyDisputes,
   fetchMyProfile,
   fetchMyReferrals,
   fetchPartnerConfig,
+  fetchRecap,
+  fetchReliability,
+  openDispute,
   sendSos,
   updateDeliveryStatus,
   updateMyProfile,
 } from '../api';
+import {
+  cacheTrips,
+  enqueueOp,
+  flushOutbox,
+  getCachedTrips,
+  loadChecklist,
+  outboxCount,
+  saveChecklist,
+} from '../utils/offlineQueue';
 
 // ---- Normalization helpers ----
 
@@ -177,6 +192,32 @@ export default function Dashboard() {
   const [claiming, setClaiming] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Cycle-3 state
+  const [disputes, setDisputes] = useState([]);
+  const [reliability, setReliability] = useState(null);
+  const [recap, setRecap] = useState(null);
+  const [isOffline, setIsOffline] = useState(
+    typeof navigator !== 'undefined' ? !navigator.onLine : false,
+  );
+  const [pendingOps, setPendingOps] = useState(0);
+  const [chipBusy, setChipBusy] = useState(null);
+  const [sentChips, setSentChips] = useState({});
+  const [cancellingId, setCancellingId] = useState(null);
+  const [disputeFor, setDisputeFor] = useState(null);
+  const [disputeNote, setDisputeNote] = useState('');
+  const [disputeSending, setDisputeSending] = useState(false);
+  const [checklist, setChecklist] = useState(() => loadChecklist());
+  const [showChecklist, setShowChecklist] = useState(false);
+
+  const TRIP_CHIPS = useMemo(
+    () => [
+      { id: 'arrived_at_shop', labelKey: 'chipArrived' },
+      { id: 'waiting_for_packing', labelKey: 'chipWaiting' },
+      { id: 'contacted_customer', labelKey: 'chipContacted' },
+    ],
+    [],
+  );
+
   const loadProfile = useCallback(async () => {
     try {
       const data = await fetchMyProfile();
@@ -194,10 +235,20 @@ export default function Dashboard() {
       else setRefreshing(true);
       try {
         const data = await fetchDeliveryRequests();
-        setDeliveries(asArray(data));
+        const list = asArray(data);
+        setDeliveries(list);
+        // Cache active trips so the trip screen stays readable offline
+        cacheTrips(list.filter((d) => ['accepted', 'picked'].includes(getStatus(d))));
         setError('');
       } catch (e) {
-        setError(e.friendlyMessage || t('couldNotLoad'));
+        // Offline: fall back to the last synced trip snapshot
+        const cached = getCachedTrips();
+        if (cached && cached.length > 0) {
+          setDeliveries((prev) => (prev.length > 0 ? prev : cached));
+          setError('');
+        } else {
+          setError(e.friendlyMessage || t('couldNotLoad'));
+        }
       }
       if (mode === 'initial') setInitialLoading(false);
       else setRefreshing(false);
@@ -223,23 +274,92 @@ export default function Dashboard() {
     }
   }, []);
 
+  // Cycle-3 loaders (all non-fatal; cards render honest empty states)
+  const loadDisputes = useCallback(async () => {
+    try {
+      setDisputes(asArray(await fetchMyDisputes()));
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
+  const loadReliability = useCallback(async () => {
+    try {
+      setReliability(await fetchReliability());
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
+  const loadRecap = useCallback(async () => {
+    try {
+      setRecap(await fetchRecap());
+    } catch {
+      // Non-fatal
+    }
+  }, []);
+
+  const syncOutbox = useCallback(async () => {
+    const { done, failed } = await flushOutbox({
+      status: (op) => updateDeliveryStatus(op.requestId, op.status, op.otp),
+      note: (op) => addTripNote(op.requestId, op.chip),
+    });
+    setPendingOps(outboxCount());
+    if (done > 0) {
+      setNotice(t('opsSynced', { count: done }));
+      await loadDeliveries('refresh');
+    }
+    if (failed > 0) {
+      setError(t('opsFailed', { count: failed }));
+    }
+  }, [loadDeliveries, t]);
+
   const refreshAll = useCallback(
     async (mode = 'refresh') => {
-      await Promise.all([loadDeliveries(mode), loadProfile()]);
+      await Promise.all([loadDeliveries(mode), loadProfile(), loadDisputes(), loadReliability(), loadRecap()]);
     },
-    [loadDeliveries, loadProfile],
+    [loadDeliveries, loadProfile, loadDisputes, loadReliability, loadRecap],
   );
 
   useEffect(() => {
     refreshAll('initial');
     loadConfig();
     loadReferrals();
+    setPendingOps(outboxCount());
     const timer = setInterval(() => refreshAll('refresh'), 30000);
     return () => clearInterval(timer);
   }, [refreshAll, loadConfig, loadReferrals]);
 
+  // Offline / reconnect: queue trip updates offline, sync on reconnect
+  useEffect(() => {
+    const onOnline = () => {
+      setIsOffline(false);
+      syncOutbox();
+    };
+    const onOffline = () => setIsOffline(true);
+    window.addEventListener('online', onOnline);
+    window.addEventListener('offline', onOffline);
+    return () => {
+      window.removeEventListener('online', onOnline);
+      window.removeEventListener('offline', onOffline);
+    };
+  }, [syncOutbox]);
+
   const active = deliveries.filter((d) => ['accepted', 'picked'].includes(getStatus(d)));
   const available = deliveries.filter((d) => !INACTIVE.has(getStatus(d)));
+  const cancelledTrips = useMemo(
+    () => deliveries.filter((d) => getStatus(d) === 'cancelled'),
+    [deliveries],
+  );
+
+  const disputeByRequest = useMemo(() => {
+    const map = {};
+    for (const d of disputes) {
+      const rid = d.delivery_request_id ?? d.request_id;
+      if (rid) map[rid] = d;
+    }
+    return map;
+  }, [disputes]);
 
   // Nearest-first sorting for available requests (NULLs last)
   const sortedAvailable = useMemo(() => {
@@ -382,9 +502,108 @@ export default function Dashboard() {
     const id = getId(delivery);
     if (!id) return;
 
-    await updateDeliveryStatus(id, type, otp);
+    await submitTripStatus(id, type, otp);
     setNotice(type === 'picked' ? t('pickedNotice') : t('deliveredNotice'));
     await loadDeliveries('refresh');
+  }
+
+  // Offline-aware trip status submit: queue when offline, sync on reconnect.
+  // Server stays authoritative — a stale queued op fails with the server error.
+  async function submitTripStatus(id, status, otp) {
+    if (isOffline) {
+      enqueueOp({ kind: 'status', requestId: id, status, otp });
+      setPendingOps(outboxCount());
+      setNotice(t('queuedSync'));
+      return;
+    }
+    try {
+      await updateDeliveryStatus(id, status, otp);
+    } catch (e) {
+      if (!navigator.onLine) {
+        enqueueOp({ kind: 'status', requestId: id, status, otp });
+        setPendingOps(outboxCount());
+        setNotice(t('queuedSync'));
+        return;
+      }
+      throw e;
+    }
+  }
+
+  // Quick status chips — one tap, no typing
+  async function handleChip(id, chip) {
+    if (!id || chipBusy) return;
+    setChipBusy(`${id}-${chip}`);
+    setError('');
+    try {
+      if (isOffline) {
+        enqueueOp({ kind: 'note', requestId: id, chip });
+        setPendingOps(outboxCount());
+        setSentChips((prev) => ({ ...prev, [`${id}-${chip}`]: true }));
+        setNotice(t('queuedSync'));
+        return;
+      }
+      try {
+        await addTripNote(id, chip);
+      } catch (e) {
+        if (!navigator.onLine) {
+          enqueueOp({ kind: 'note', requestId: id, chip });
+          setPendingOps(outboxCount());
+          setNotice(t('queuedSync'));
+          return;
+        }
+        throw e;
+      }
+      setSentChips((prev) => ({ ...prev, [`${id}-${chip}`]: true }));
+      setNotice(t('chipSent'));
+    } catch (e) {
+      setError(e.friendlyMessage || t('chipFailed'));
+    } finally {
+      setChipBusy(null);
+    }
+  }
+
+  // Partner-initiated cancel of an accepted trip (bike issue, emergency…)
+  async function handleCancelTrip(d) {
+    const id = getId(d);
+    if (!id || cancellingId) return;
+    if (!window.confirm(t('cancelTripConfirm'))) return;
+    setCancellingId(id);
+    setError('');
+    try {
+      await cancelTrip(id);
+      setNotice(t('tripCancelled'));
+      await loadDeliveries('refresh');
+    } catch (e) {
+      setError(e.friendlyMessage || t('cancelFailed'));
+    } finally {
+      setCancellingId(null);
+    }
+  }
+
+  // "I already travelled" dispute on an order-cancelled trip
+  async function handleSubmitDispute(requestId) {
+    if (!requestId || disputeSending) return;
+    setDisputeSending(true);
+    setError('');
+    try {
+      await openDispute(requestId, disputeNote.trim());
+      setNotice(t('disputeSent'));
+      setDisputeFor(null);
+      setDisputeNote('');
+      await loadDisputes();
+    } catch (e) {
+      setError(e.friendlyMessage || t('disputeFailed'));
+    } finally {
+      setDisputeSending(false);
+    }
+  }
+
+  function toggleChecklistItem(key) {
+    setChecklist((prev) => {
+      const next = { ...prev, [key]: !prev[key] };
+      saveChecklist(next);
+      return next;
+    });
   }
 
   // SOS
@@ -622,6 +841,45 @@ export default function Dashboard() {
           </button>
         </section>
 
+        {/* Duty-on checklist — quick pre-trip sanity check */}
+        {profile.is_online ? (
+          <section className="card checklist-card">
+            <button
+              type="button"
+              className="checklist-head"
+              onClick={() => setShowChecklist((v) => !v)}
+              aria-expanded={showChecklist}
+            >
+              <Icon name="check" size={18} />
+              <strong>{t('dutyChecklist')}</strong>
+              <span className="muted tiny">
+                {Object.values(checklist).filter(Boolean).length}/4
+              </span>
+            </button>
+            {showChecklist ? (
+              <ul className="checklist">
+                {[
+                  { key: 'phone', labelKey: 'checkPhone' },
+                  { key: 'bag', labelKey: 'checkBag' },
+                  { key: 'fuel', labelKey: 'checkFuel' },
+                  { key: 'idcard', labelKey: 'checkId' },
+                ].map((item) => (
+                  <li key={item.key}>
+                    <label className="checklist-item">
+                      <input
+                        type="checkbox"
+                        checked={!!checklist[item.key]}
+                        onChange={() => toggleChecklistItem(item.key)}
+                      />
+                      <span>{t(item.labelKey)}</span>
+                    </label>
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+          </section>
+        ) : null}
+
         {/* Global Alerts */}
         {error ? (
           <Alert type="error" onClose={() => setError('')}>
@@ -632,6 +890,27 @@ export default function Dashboard() {
           <Alert type="success" onClose={() => setNotice('')}>
             {notice}
           </Alert>
+        ) : null}
+
+        {/* Offline banner — trip screen stays readable, updates queue */}
+        {isOffline ? (
+          <div className="card offline-banner" role="status">
+            <Icon name="wifiOff" size={18} />
+            <div>
+              <strong>{t('offlineTitle')}</strong>
+              <p className="muted tiny">
+                {pendingOps > 0 ? t('offlinePending', { count: pendingOps }) : t('offlineSub')}
+              </p>
+            </div>
+          </div>
+        ) : pendingOps > 0 ? (
+          <div className="card offline-banner" role="status">
+            <Icon name="sync" size={18} />
+            <div>
+              <strong>{t('pendingSync', { count: pendingOps })}</strong>
+              <p className="muted tiny">{t('pendingSyncSub')}</p>
+            </div>
+          </div>
         ) : null}
 
         {/* Navigation Tabs */}
@@ -714,7 +993,9 @@ export default function Dashboard() {
                             <div className="trip-stop-main">
                               <div className="trip-stop-head">
                                 {getOrderLabel(d) ? (
-                                  <span className="muted tiny">Order {getOrderLabel(d)}</span>
+                                  <span className="muted tiny">
+                                    {t('orderCode')}: <strong>{getOrderLabel(d)}</strong>
+                                  </span>
                                 ) : null}
                                 <span className={`badge ${s === 'picked' ? 'badge-blue' : 'badge-green'}`}>
                                   {s}
@@ -722,6 +1003,24 @@ export default function Dashboard() {
                                 {s === 'accepted' ? <PackBadge orderStatus={getOrderStatus(d)} /> : null}
                               </div>
                               <Route pickup={i === 0 ? getPickup(d) : ''} drop={getDrop(d)} masked={false} />
+                              {/* Quick status chips — one tap, no typing */}
+                              <div className="chip-row" role="group" aria-label={t('tripUpdate')}>
+                                {TRIP_CHIPS.map((chip) => {
+                                  const key = `${id}-${chip.id}`;
+                                  const sent = sentChips[key];
+                                  return (
+                                    <button
+                                      key={chip.id}
+                                      type="button"
+                                      className={`chip ${sent ? 'chip-sent' : ''}`}
+                                      disabled={chipBusy === key || sent}
+                                      onClick={() => handleChip(id, chip.id)}
+                                    >
+                                      {chipBusy === key ? '…' : sent ? `✓ ${t(chip.labelKey)}` : t(chip.labelKey)}
+                                    </button>
+                                  );
+                                })}
+                              </div>
                               <div className="delivery-foot">
                                 {s === 'accepted' ? (
                                   <button
@@ -742,6 +1041,16 @@ export default function Dashboard() {
                                     {t('markDelivered')}
                                   </button>
                                 )}
+                                {s === 'accepted' ? (
+                                  <button
+                                    type="button"
+                                    className="btn-link danger-link"
+                                    disabled={cancellingId === id}
+                                    onClick={() => handleCancelTrip(d)}
+                                  >
+                                    {cancellingId === id ? t('cancelling') : t('cancelTrip')}
+                                  </button>
+                                ) : null}
                               </div>
                             </div>
                           </li>
@@ -794,6 +1103,95 @@ export default function Dashboard() {
                 )
               )}
             </section>
+
+            {/* Cancelled trips — stays visible, with "I already travelled" dispute */}
+            {cancelledTrips.length > 0 ? (
+              <section>
+                <h2 className="section-title">{t('cancelledTrips')}</h2>
+                {cancelledTrips.map((d, idx) => {
+                  const id = getId(d);
+                  const byOrder = d.cancelled_by === 'order';
+                  const dispute = disputeByRequest[id];
+                  return (
+                    <article className="card delivery-card delivery-cancelled" key={id ?? `cx-${idx}`}>
+                      <div className="trip-stop-head">
+                        {getOrderLabel(d) ? (
+                          <span className="muted tiny">
+                            {t('orderCode')}: <strong>{getOrderLabel(d)}</strong>
+                          </span>
+                        ) : null}
+                        <span className="badge badge-grey">{t('cancelled')}</span>
+                      </div>
+                      <p className="muted tiny">
+                        {getShopName(d)} •{' '}
+                        {byOrder ? t('cancelledByOrder') : t('cancelledByYou')}
+                      </p>
+                      {byOrder ? (
+                        dispute ? (
+                          <div className="dispute-status">
+                            <span
+                              className={`badge ${
+                                dispute.status === 'approved'
+                                  ? 'badge-green'
+                                  : dispute.status === 'rejected'
+                                    ? 'badge-grey'
+                                    : 'badge-blue'
+                              }`}
+                            >
+                              {t(`dispute${dispute.status[0].toUpperCase()}${dispute.status.slice(1)}`)}
+                            </span>
+                            {dispute.status === 'approved' && dispute.goodwill_amount ? (
+                              <span className="muted tiny">
+                                {' '}
+                                • {t('goodwillAwarded', { amount: Number(dispute.goodwill_amount).toFixed(0) })}
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : disputeFor === id ? (
+                          <div className="dispute-form">
+                            <textarea
+                              className="input"
+                              rows={2}
+                              placeholder={t('disputePlaceholder')}
+                              value={disputeNote}
+                              onChange={(e) => setDisputeNote(e.target.value)}
+                            />
+                            <div className="delivery-foot">
+                              <button
+                                type="button"
+                                className="btn btn-primary btn-sm"
+                                disabled={disputeSending}
+                                onClick={() => handleSubmitDispute(id)}
+                              >
+                                {disputeSending ? t('sending') : t('disputeSubmit')}
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-ghost btn-sm"
+                                onClick={() => {
+                                  setDisputeFor(null);
+                                  setDisputeNote('');
+                                }}
+                              >
+                                {t('cancel')}
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="btn btn-ghost btn-sm"
+                            onClick={() => setDisputeFor(id)}
+                          >
+                            {t('disputeCta')}
+                          </button>
+                        )
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </section>
+            ) : null}
           </>
         ) : null}
 
@@ -830,6 +1228,62 @@ export default function Dashboard() {
                 <span className="muted tiny">
                   {earningsStats.all.count} {t('delivered')}
                 </span>
+              </div>
+            </div>
+
+            {/* End-of-day recap — real ledger rows only */}
+            <div className="card recap-card">
+              <div className="ledger-notice-icon">
+                <Icon name="chart" size={24} />
+              </div>
+              <div className="recap-body">
+                <strong>{t('todayRecap')}</strong>
+                {recap ? (
+                  <p className="muted tiny">
+                    {t('tripsToday', { count: recap.trips })}
+                    {recap.earnings !== null && recap.earnings !== undefined
+                      ? ` • ₹${Number(recap.earnings).toFixed(2)}`
+                      : ` • ${t('earningsUnavailable')}`}
+                  </p>
+                ) : (
+                  <p className="muted tiny">{t('recapLoading')}</p>
+                )}
+              </div>
+            </div>
+
+            {/* Reliability — backend-verified events only, partner/admin only */}
+            <div className="card recap-card">
+              <div className="ledger-notice-icon">
+                <Icon name="check" size={24} />
+              </div>
+              <div className="recap-body">
+                <strong>{t('reliabilityTitle')}</strong>
+                {reliability ? (
+                  reliability.score === null || reliability.score === undefined ? (
+                    <p className="muted tiny">{reliability.note || t('notEnoughTrips')}</p>
+                  ) : (
+                    <>
+                      <p className="reliability-score">
+                        {reliability.score}
+                        <span className="muted tiny">/100</span>
+                      </p>
+                      <p className="muted tiny">
+                        {t('reliabilityDetail', {
+                          delivered: reliability.delivered,
+                          trips: reliability.trips,
+                          ontime:
+                            reliability.ontime_pickup_pct !== null &&
+                            reliability.ontime_pickup_pct !== undefined
+                              ? `${reliability.ontime_pickup_pct}%`
+                              : '—',
+                        })}
+                      </p>
+                    </>
+                  )
+                ) : (
+                  <p className="muted tiny">{t('recapLoading')}</p>
+                )}
+                <p className="muted tiny">{t('reliabilityPrivate')}</p>
               </div>
             </div>
 
