@@ -1,12 +1,15 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import Header from './components/Header.jsx';
+import BottomNav from './components/BottomNav.jsx';
 import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import ShopDetail from './pages/ShopDetail.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Orders from './pages/Orders.jsx';
+import More from './pages/More.jsx';
+import Notifications from './pages/Notifications.jsx';
 
 function RequireAuth({ children }) {
   const { user, loading } = useAuth();
@@ -49,9 +52,12 @@ export default function App() {
           <Route path="/cart" element={<RequireCustomer><Cart /></RequireCustomer>} />
           <Route path="/checkout" element={<RequireCustomer><Checkout /></RequireCustomer>} />
           <Route path="/orders" element={<RequireCustomer><Orders /></RequireCustomer>} />
+          <Route path="/more" element={<RequireAuth><More /></RequireAuth>} />
+          <Route path="/notifications" element={<RequireAuth><Notifications /></RequireAuth>} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
+      <BottomNav />
       <footer className="footer">
         <img
           src="/lezzflow-icon.png"

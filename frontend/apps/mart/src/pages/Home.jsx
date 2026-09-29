@@ -52,6 +52,7 @@ export default function Home() {
   const [manualLng, setManualLng] = useState('');
   const [manualError, setManualError] = useState('');
   const [layers, setLayers] = useState({ within5km: [], within10km: [], within20km: [] });
+  const [launchGate, setLaunchGate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -65,6 +66,7 @@ export default function Home() {
         within10km: res.data?.within10km || [],
         within20km: res.data?.within20km || [],
       });
+      setLaunchGate(res.data?.launch_gate || null);
     } catch (e) {
       setError(e.response?.data?.error || 'Could not load nearby shops. Please try again.');
     } finally {
@@ -198,6 +200,21 @@ export default function Home() {
 
       {locationError && <div className="banner banner-error">{locationError}</div>}
       {error && <div className="banner banner-error">{error}</div>}
+
+      {/* Cluster launch gate (GTM cycle-3): below 25 live shops the area is
+          honestly shown as "coming soon" — never a thin, disappointing list. */}
+      {launchGate && !launchGate.ready && (
+        <div className="banner banner-info launch-gate">
+          <Icon name="location" size={18} />
+          <div>
+            <strong>Jald aa rahe hain!</strong>
+            <p className="muted small">
+              {launchGate.live_shops_10km} of {launchGate.threshold} shops live near you —
+              we launch this area once {launchGate.threshold} shops are live.
+            </p>
+          </div>
+        </div>
+      )}
 
       {showManualLocation && (
         <div className="manual-location">

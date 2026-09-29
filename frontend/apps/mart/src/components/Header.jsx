@@ -1,6 +1,7 @@
 import { Link, NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
 import { useCart } from '../CartContext.jsx';
+import NotifBell from './NotifBell.jsx';
 
 export default function Header() {
   const { user, logout } = useAuth();
@@ -34,6 +35,7 @@ export default function Header() {
             Cart
             {count > 0 && <span className="cart-badge">{count}</span>}
           </NavLink>
+          <NotifBell />
           {user && (
             <button type="button" className="btn btn-outline btn-sm" onClick={handleLogout}>
               Logout
