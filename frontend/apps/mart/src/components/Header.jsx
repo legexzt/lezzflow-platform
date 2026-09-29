@@ -16,32 +16,38 @@ export default function Header() {
   return (
     <header className="app-header">
       <div className="header-inner">
-        <Link to="/" className="brand">
+        <Link to={user ? '/' : '/login'} className="brand">
           <img
-            src="/lezzflow-horizontal-dark.png"
+            src="/logo.svg"
             alt="LezzFlow"
             className="brand-logo"
           />
           <span className="brand-app">Mart</span>
         </Link>
-        <nav className="nav">
-          <NavLink to="/" end className="nav-link">
-            Home
-          </NavLink>
-          <NavLink to="/orders" className="nav-link">
-            My Orders
-          </NavLink>
-          <NavLink to="/cart" className="nav-link cart-link">
-            Cart
-            {count > 0 && <span className="cart-badge">{count}</span>}
-          </NavLink>
-          <NotifBell />
-          {user && (
+        {user ? (
+          <nav className="nav">
+            <NavLink to="/" end className="nav-link">
+              Home
+            </NavLink>
+            <NavLink to="/orders" className="nav-link">
+              My Orders
+            </NavLink>
+            <NavLink to="/cart" className="nav-link cart-link">
+              Cart
+              {count > 0 && <span className="cart-badge">{count}</span>}
+            </NavLink>
+            <NotifBell />
             <button type="button" className="btn btn-outline btn-sm" onClick={handleLogout}>
               Logout
             </button>
-          )}
-        </nav>
+          </nav>
+        ) : (
+          <nav className="nav">
+            <Link to="/login" className="btn btn-outline btn-sm">
+              Sign in
+            </Link>
+          </nav>
+        )}
       </div>
     </header>
   );

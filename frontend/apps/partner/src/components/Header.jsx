@@ -13,7 +13,7 @@ export default function Header() {
       <div className="app-header-inner">
         {logoOk ? (
           <img
-            src="/lezzflow-horizontal-dark.png"
+            src="/logo.svg"
             alt="LezzFlow"
             className="brand-logo"
             onError={() => setLogoOk(false)}

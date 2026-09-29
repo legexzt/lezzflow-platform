@@ -18,6 +18,26 @@ function emailAuthMessage(code, message) {
   return message || 'Sign-in failed. Please try again.';
 }
 
+function GoogleG() {
+  return (
+    <svg className="g-logo" viewBox="0 0 24 24" aria-hidden="true">
+      <path fill="#4285F4" d="M23.5 12.27c0-.85-.08-1.66-.22-2.45H12v4.64h6.45a5.52 5.52 0 0 1-2.39 3.62v3h3.87c2.26-2.09 3.57-5.16 3.57-8.81z" />
+      <path fill="#34A853" d="M12 24c3.24 0 5.96-1.07 7.94-2.91l-3.87-3c-1.07.72-2.45 1.15-4.07 1.15-3.13 0-5.78-2.11-6.73-4.96H1.29v3.1A12 12 0 0 0 12 24z" />
+      <path fill="#FBBC05" d="M5.27 14.28A7.2 7.2 0 0 1 4.89 12c0-.79.14-1.56.38-2.28v-3.1H1.29a12 12 0 0 0 0 10.76l3.98-3.1z" />
+      <path fill="#EA4335" d="M12 4.76c1.76 0 3.35.61 4.6 1.8l3.42-3.42A11.98 11.98 0 0 0 12 0 12 12 0 0 0 1.29 6.62l3.98 3.1c.95-2.85 3.6-4.96 6.73-4.96z" />
+    </svg>
+  );
+}
+
+function Check() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+      <circle cx="8" cy="8" r="8" fill="#16a34a" />
+      <path d="M5 8.2 7.2 10.4 11 6" stroke="#fff" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export default function Login() {
   const { user, loading, error, login } = useAuth();
   const [signingIn, setSigningIn] = useState(false);
@@ -68,23 +88,34 @@ export default function Login() {
             e.currentTarget.style.display = 'none';
           }}
         />
-        <h1>LezzFlow Mart</h1>
-        <p className="muted">
-          Order groceries from kirana shops near you — delivered or ready for pickup.
+        <h1 className="login-title">
+          LezzFlow <span>Mart</span>
+        </h1>
+        <p className="login-sub">
+          Groceries from kirana shops near you — delivered fast, or ready for pickup.
         </p>
+        <ul className="login-points">
+          <li>
+            <Check /> Live shelf stock — no out-of-stock surprises
+          </li>
+          <li>
+            <Check /> Shops within minutes of your home
+          </li>
+        </ul>
         {(localError || error) && (
           <div className="banner banner-error">{localError || error}</div>
         )}
         <button
           type="button"
-          className="btn btn-primary btn-block btn-lg"
+          className="btn btn-google btn-block btn-lg"
           onClick={handleLogin}
           disabled={signingIn || loading}
         >
-          {signingIn ? 'Signing in…' : 'Sign in with Google'}
+          <GoogleG />
+          {signingIn ? 'Signing in…' : 'Continue with Google'}
         </button>
         <div className="login-divider">
-          <span>Sign in with email</span>
+          <span>or sign in with email</span>
         </div>
         <form className="email-auth-form" onSubmit={handleEmailLogin} noValidate>
           <input
@@ -107,7 +138,7 @@ export default function Login() {
           />
           <button
             type="submit"
-            className="btn btn-secondary btn-block"
+            className="btn btn-primary btn-block"
             disabled={emailBusy}
           >
             {emailBusy ? 'Signing in…' : 'Sign in'}

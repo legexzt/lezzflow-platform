@@ -68,7 +68,7 @@ export default function Login() {
       <div className="card auth-card">
         {logoOk ? (
           <img
-            src="/lezzflow-horizontal-dark.png"
+            src="/logo.svg"
             alt="LezzFlow"
             className="auth-logo"
             onError={() => setLogoOk(false)}

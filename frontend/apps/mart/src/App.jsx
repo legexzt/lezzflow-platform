@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from './AuthContext.jsx';
 import Header from './components/Header.jsx';
 import BottomNav from './components/BottomNav.jsx';
@@ -41,6 +41,11 @@ function RequireCustomer({ children }) {
 }
 
 export default function App() {
+  const { user, loading } = useAuth();
+  const location = useLocation();
+  // Logged-out visitors only ever see /login — keep the chrome minimal there.
+  const guest = !loading && !user;
+
   return (
     <div className="app">
       <Header />
@@ -57,7 +62,8 @@ export default function App() {
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
-      <BottomNav />
+      {!guest && <BottomNav />}
+      {!guest && (
       <footer className="footer">
         <img
           src="/lezzflow-icon.png"
@@ -69,6 +75,7 @@ export default function App() {
         />
         <span>LezzFlow Mart — fresh from your neighbourhood kirana</span>
       </footer>
+      )}
     </div>
   );
 }
