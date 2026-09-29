@@ -3,7 +3,7 @@ const router = express.Router();
 const { getAdminStats, listAllShops, listAllOrders, listAllUsers, listAllProducts } = require('../controllers/adminController');
 const { listAudit, nudgeOrder, grantOpsViewer, revokeOpsViewer } = require('../controllers/auditController');
 const { getFunnelDropoff } = require('../controllers/onboardingController');
-const { listLocalities, getLocality } = require('../controllers/localityAnalyticsController');
+const { listLocalities, getLocality, getLaunchGate } = require('../controllers/localityAnalyticsController');
 const { listSosAlerts, updateSosAlert } = require('../controllers/deliveryController');
 const { listAdminOffers } = require('../controllers/offerController');
 const { listAdminReferrals } = require('../controllers/referralController');
@@ -34,6 +34,7 @@ router.get('/referrals', authenticateToken, requireRole('admin'), listAdminRefer
 
 // Per-locality analytics (read-only; admin auth)
 router.get('/analytics/localities', authenticateToken, requireRole('admin'), listLocalities);
+router.get('/analytics/launch-gate', authenticateToken, requireRole('admin'), getLaunchGate);
 router.get('/analytics/localities/:locality', authenticateToken, requireRole('admin'), getLocality);
 
 // Onboarding funnel dropoff (read-only; admin auth)

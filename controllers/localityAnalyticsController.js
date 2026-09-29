@@ -15,6 +15,7 @@
  */
 
 const { query } = require('../db');
+const { LAUNCH_GATE_MIN_SHOPS } = require('../services/launchGate');
 
 // ---------------------------------------------------------------------------
 // Helper: detect whether shops.is_live exists in this DB instance
@@ -266,5 +267,40 @@ async function getLocality(req, res) {
 module.exports = {
   listLocalities,
   getLocality,
+  getLaunchGate,
   resetIsLiveCache,
 };
+
+// ---------------------------------------------------------------------------
+// GET /analytics/launch-gate
+// Cluster launch gate (GTM cycle-3): one row per locality with the live-shop
+// count against the 25-shop threshold. A locality is "ready" for customer
+// launch only when active_kiranas >= 25. All numbers from real rows.
+// ---------------------------------------------------------------------------
+async function getLaunchGate(req, res) {
+  try {
+    const rows = await buildLocalityMetrics(30, null);
+    const data = rows.map((r) => {
+      const activeKiranas = Number(r.active_kiranas) || 0;
+      return {
+        locality: r.locality,
+        active_kiranas: activeKiranas,
+        threshold: LAUNCH_GATE_MIN_SHOPS,
+        ready: activeKiranas >= LAUNCH_GATE_MIN_SHOPS,
+        shops_needed: Math.max(0, LAUNCH_GATE_MIN_SHOPS - activeKiranas),
+        active_kiranas_definition: r.active_kiranas_definition,
+      };
+    });
+    // Not-ready first — the ops eye should land on gaps.
+    data.sort((a, b) => (a.ready === b.ready ? b.shops_needed - a.shops_needed : a.ready ? 1 : -1));
+    return res.json({
+      threshold: LAUNCH_GATE_MIN_SHOPS,
+      localities_count: data.length,
+      ready_count: data.filter((d) => d.ready).length,
+      data,
+    });
+  } catch (err) {
+    console.error('[localityAnalytics] getLaunchGate error:', err);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+}

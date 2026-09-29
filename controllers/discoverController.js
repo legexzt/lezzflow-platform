@@ -3,6 +3,7 @@ const { groupShopsByDistance } = require('../services/distanceService');
 const { isDegradedMode } = require('../middleware/degradedMode');
 const cacheService = require('../services/cache');
 const { buildDiscoveryCacheKey, staleKey } = require('../middleware/cache');
+const { LAUNCH_GATE_MIN_SHOPS } = require('../services/launchGate');
 
 // Lazy, cached PostGIS availability flag (module scope)
 let postgisAvailable = null;
@@ -84,6 +85,16 @@ async function discoverShops(req, res, next) {
     }
 
     const layers = groupShopsByDistance(shops, parsedLat, parsedLng);
+
+    // Cluster launch gate (GTM cycle-3): the 10km ring is "live" for customers
+    // only with enough live shops; below it Mart shows "jald aa rahe hain".
+    const liveShops10km =
+      (layers.within5km?.length || 0) + (layers.within10km?.length || 0);
+    layers.launch_gate = {
+      threshold: LAUNCH_GATE_MIN_SHOPS,
+      live_shops_10km: liveShops10km,
+      ready: liveShops10km >= LAUNCH_GATE_MIN_SHOPS,
+    };
 
     return res.json(layers);
   } catch (error) {

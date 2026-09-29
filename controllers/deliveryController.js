@@ -41,6 +41,55 @@ async function checkPartnerKycApproved(partnerId) {
 }
 
 /**
+ * GTM cycle-3: system-backed referral rewards.
+ * When a referred partner completes their FIRST delivered trip, auto-mark the
+ * referral 'qualified' and stamp the currently configured partner_referral_bonus.
+ * Reward is only *earned* after a real trip (never on signup); admin still
+ * reviews fraud and marks 'paid'. Never throws — a referral-hook failure must
+ * not fail the delivery itself.
+ */
+async function qualifyReferralOnFirstTrip(partnerId) {
+  if (!partnerId) return;
+  try {
+    const pending = await query(
+      `SELECT id FROM partner_referrals
+       WHERE referred_partner_id = $1 AND status = 'pending' LIMIT 1`,
+      [partnerId]
+    );
+    if (pending.rows.length === 0) return;
+
+    const countRes = await query(
+      `SELECT COUNT(*)::int AS n FROM delivery_requests
+       WHERE partner_id = $1 AND status = 'delivered'`,
+      [partnerId]
+    );
+    if (Number(countRes.rows[0].n) !== 1) return; // not the first trip
+
+    let bonus = null;
+    try {
+      const cfg = await query(
+        `SELECT value FROM app_config WHERE key = 'partner_referral_bonus'`
+      );
+      if (cfg.rows.length > 0) {
+        const v = Number(cfg.rows[0].value);
+        if (Number.isFinite(v) && v >= 0) bonus = v;
+      }
+    } catch {
+      // app_config may not exist in some envs — bonus stays null (honest: unset)
+    }
+
+    await query(
+      `UPDATE partner_referrals
+       SET status = 'qualified', bonus_amount = COALESCE($2, bonus_amount)
+       WHERE id = $1 AND status = 'pending'`,
+      [pending.rows[0].id, bonus]
+    );
+  } catch (err) {
+    console.error('[referral] auto-qualify failed:', err.message);
+  }
+}
+
+/**
  * GET /api/delivery/requests
  * Partner only, KYC must be approved (admins bypass).
  * An off-duty partner (is_online=false, role=partner) sees ONLY requests already assigned to them.
@@ -255,6 +304,13 @@ async function updateDeliveryRequestStatus(req, res, next) {
          WHERE id = $2`,
         [correspondingOrderStatus, deliveryReq.order_id]
       );
+    }
+
+    // GTM cycle-3: system-backed referral rewards — first delivered trip of a
+    // referred partner auto-qualifies the referral with the configured bonus.
+    // Admin still reviews fraud and marks 'paid'; no money moves automatically.
+    if (targetStatus === 'delivered') {
+      await qualifyReferralOnFirstTrip(updatedResult.rows[0].partner_id);
     }
 
     const responseData = { ...updatedResult.rows[0] };
