@@ -13,7 +13,6 @@ export default function BottomNav() {
     { to: '/', end: true, label: t('nav_home'), icon: 'home' },
     { to: '/orders', end: false, label: t('nav_orders'), icon: 'receipt' },
     { to: '/products', end: false, label: t('nav_products'), icon: 'box' },
-    { to: '/offers', end: false, label: t('nav_offers'), icon: 'megaphone' },
     { to: '/money', end: false, label: t('nav_money'), icon: 'money' },
     { to: '/more', end: false, label: t('nav_more'), icon: 'settings' },
   ]
