@@ -1,5 +1,6 @@
 const { query } = require('../db');
 const { randomUUID } = require('crypto');
+const { isDegradedMode, degradedResponse } = require('../middleware/degradedMode');
 
 /**
  * Helper: validate and parse pagination parameters (same convention as adminController)
@@ -177,6 +178,16 @@ async function markAllRead(req, res, next) {
  */
 async function adminCreateNotification(req, res, next) {
   try {
+    // DEGRADED_MODE: skip nonessential Sarkari Yojana / promo nudges to shed
+    // load. Order updates and system alerts still go through.
+    const requestedType = (req.body && req.body.type) || 'system';
+    if (isDegradedMode() && ['scheme_offer', 'promo'].includes(requestedType)) {
+      return res
+        .status(503)
+        .set('Retry-After', '60')
+        .json(degradedResponse(`Nonessential '${requestedType}' nudges are paused in degraded mode`));
+    }
+
     const {
       user_id = null,
       title,

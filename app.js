@@ -1,5 +1,6 @@
 const express = require('express');
 const helmet = require('helmet');
+const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 const fs = require('fs');
@@ -29,6 +30,10 @@ app.use(helmet());
 
 // CORS configuration
 app.use(cors());
+
+// Gzip/deflate compression (scaling cycle-3): 1 KB threshold so small
+// JSON payloads skip the CPU cost while list/discovery responses shrink.
+app.use(compression({ threshold: 1024 }));
 
 // Rate limiter
 app.use(apiLimiter);

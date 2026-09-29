@@ -1,5 +1,8 @@
 const { query } = require('../db');
 const { groupShopsByDistance } = require('../services/distanceService');
+const { isDegradedMode } = require('../middleware/degradedMode');
+const cacheService = require('../services/cache');
+const { buildDiscoveryCacheKey, staleKey } = require('../middleware/cache');
 
 // Lazy, cached PostGIS availability flag (module scope)
 let postgisAvailable = null;
@@ -39,6 +42,18 @@ async function discoverShops(req, res, next) {
       return res.status(400).json({
         error: 'lat and lng must be valid numbers',
       });
+    }
+
+    // DEGRADED_MODE: serve a stale cached discovery result where one exists,
+    // so the endpoint stays up without hitting the database.
+    if (isDegradedMode()) {
+      const key = buildDiscoveryCacheKey(req.originalUrl || req.url || '');
+      const stale = cacheService.get(staleKey(key));
+      if (stale !== undefined) {
+        res.set('X-Cache', 'STALE');
+        res.set('X-Degraded-Mode', '1');
+        return res.json(stale);
+      }
     }
 
     const hasPostgis = await isPostgisAvailable();
