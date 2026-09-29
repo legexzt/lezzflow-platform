@@ -8,6 +8,8 @@
 process.env.NODE_ENV = 'test';
 
 const request = require('supertest');
+const http = require('http');
+const zlib = require('zlib');
 const app = require('../app');
 const admin = require('../config/firebase');
 const { buildDiscoveryCacheKey } = require('../middleware/cache');
@@ -23,6 +25,7 @@ const barcodeService = require('../services/barcodeService');
 const {
   setupTestDb,
   createTestUser,
+  createTestShop,
 } = require('./helpers/testDb');
 
 const mockAuth = (uid) =>
@@ -201,13 +204,46 @@ describe('DEGRADED_MODE=1', () => {
 describe('Compression', () => {
   test('large JSON responses are gzipped', async () => {
     await setupTestDb();
-    const res = await request(app)
-      .get('/api/discover?lat=12.9716&lng=77.5946')
-      .set('Accept-Encoding', 'gzip');
-    // supertest auto-decompresses; the header proves compression ran on a
-    // response above the 1KB threshold when body is large enough.
-    // At minimum the middleware must be mounted without breaking responses.
-    expect(res.status).toBe(200);
-    expect(res.body).toBeDefined();
+    // Seed enough shops to push the discover payload above the 1KB threshold
+    const seller = await createTestUser({ firebase_uid: 'gzip-seller', role: 'seller' });
+    for (let i = 0; i < 25; i++) {
+      await createTestShop({
+        seller_id: seller.id,
+        name: `Gzip Test Kirana Store Number ${i} With A Deliberately Long Name`,
+        address: `${i} Long Market Road, Some Locality Name, Bengaluru Karnataka 560001`,
+        lat: 12.9716,
+        lng: 77.5946,
+      });
+    }
+
+    // Raw HTTP (Node does NOT auto-decompress) so the content-encoding
+    // header is visible — this conclusively proves gzip ran.
+    const srv = http.createServer(app);
+    await new Promise((resolve) => srv.listen(0, resolve));
+    try {
+      const port = srv.address().port;
+      const raw = await new Promise((resolve, reject) => {
+        http
+          .get(
+            {
+              port,
+              path: '/api/discover?lat=12.9716&lng=77.5946',
+              headers: { 'Accept-Encoding': 'gzip' },
+            },
+            (res) => {
+              const chunks = [];
+              res.on('data', (c) => chunks.push(c));
+              res.on('end', () => resolve({ headers: res.headers, body: Buffer.concat(chunks) }));
+            }
+          )
+          .on('error', reject);
+      });
+      expect(raw.headers['content-encoding']).toBe('gzip');
+      // And the bytes are real gzip that round-trips to valid JSON
+      const json = JSON.parse(zlib.gunzipSync(raw.body).toString('utf8'));
+      expect(json).toBeDefined();
+    } finally {
+      srv.close();
+    }
   });
 });

@@ -3,6 +3,7 @@ const cluster = require('cluster');
 const os = require('os');
 const app = require('./app');
 const { runMigrations } = require('./db/migrate');
+const { startScanWorker, stopScanWorker } = require('./services/scanWorker');
 
 const PORT = process.env.PORT || 3000;
 
@@ -21,6 +22,7 @@ async function startServer() {
     // Graceful shutdown
     const handleShutdown = (signal) => {
       console.log(`Received ${signal}. Shutting down gracefully...`);
+      stopScanWorker();
       server.close(() => {
         console.log('HTTP server closed.');
         process.exit(0);
@@ -29,6 +31,14 @@ async function startServer() {
 
     process.on('SIGTERM', () => handleShutdown('SIGTERM'));
     process.on('SIGINT', () => handleShutdown('SIGINT'));
+
+    // Async scan queue worker: claims queued scan jobs (FOR UPDATE SKIP LOCKED
+    // in production) and processes them in the background. Disabled in tests
+    // and when SCAN_WORKER_ENABLED=0.
+    if (process.env.SCAN_WORKER_ENABLED !== '0') {
+      const intervalMs = parseInt(process.env.SCAN_WORKER_INTERVAL_MS || '5000', 10);
+      startScanWorker(intervalMs);
+    }
     return server;
   } catch (error) {
     console.error('Failed to start server:', error);
