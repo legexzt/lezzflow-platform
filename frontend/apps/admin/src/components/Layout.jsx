@@ -15,6 +15,10 @@ const NAV_ITEMS = [
   { to: '/funnel', label: 'Onboarding Funnel', icon: 'chart' },
   { to: '/offers', label: 'Offers', icon: 'bag' },
   { to: '/referrals', label: 'Referrals', icon: 'users' },
+  { to: '/schemes', label: 'Schemes', icon: 'bank' },
+  { to: '/notifications', label: 'Broadcasts', icon: 'megaphone' },
+  { to: '/shop-health', label: 'Shop Health', icon: 'home' },
+  { to: '/ai-ops', label: 'AI Ops', icon: 'scan' },
 ];
 
 export default function Layout({ children }) {

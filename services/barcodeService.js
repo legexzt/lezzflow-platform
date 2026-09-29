@@ -11,6 +11,9 @@ async function lookupBarcode(code) {
   const cleanCode = code.trim();
   const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(cleanCode)}.json`;
 
+  const startedAt = Date.now();
+  const { logAiCall } = require('./aiCallLog');
+
   try {
     const res = await fetch(url, {
       method: 'GET',
@@ -22,8 +25,10 @@ async function lookupBarcode(code) {
 
     if (!res.ok) {
       if (res.status === 404) {
+        logAiCall({ kind: 'barcode', status: 'ok', latencyMs: Date.now() - startedAt });
         return { found: false };
       }
+      logAiCall({ kind: 'barcode', status: 'ok', latencyMs: Date.now() - startedAt });
       return { found: false };
     }
 
@@ -35,6 +40,7 @@ async function lookupBarcode(code) {
       const brands = product.brands || '';
       const image = product.image_url || product.image_front_url || product.image_front_small_url || '';
 
+      logAiCall({ kind: 'barcode', status: 'ok', latencyMs: Date.now() - startedAt });
       return {
         found: true,
         name,
@@ -43,9 +49,11 @@ async function lookupBarcode(code) {
       };
     }
 
+    logAiCall({ kind: 'barcode', status: 'ok', latencyMs: Date.now() - startedAt });
     return { found: false };
   } catch (err) {
     console.error(`Error querying OpenFoodFacts for code ${cleanCode}:`, err.message);
+    logAiCall({ kind: 'barcode', status: 'error', latencyMs: Date.now() - startedAt, error: err.message });
     return { found: false };
   }
 }

@@ -14,6 +14,12 @@ const {
   adminDeleteScheme,
 } = require('../controllers/schemesController');
 const { adminCreateNotification } = require('../controllers/notificationsController');
+const {
+  getBroadcastCount,
+  getNotificationAnalytics,
+  getShopHealth,
+  getAiOps,
+} = require('../controllers/adminOpsController');
 const { authenticateToken } = require('../middleware/auth');
 const { requireRole } = require('../middleware/role');
 const { requireAdminWrite } = require('../middleware/adminWrite');
@@ -45,6 +51,14 @@ router.delete('/schemes/:id', authenticateToken, requireRole('admin'), requireAd
 
 // Notifications — admin can broadcast or target a user
 router.post('/notifications', authenticateToken, requireRole('admin'), requireAdminWrite, adminCreateNotification);
+router.get('/notifications/broadcast-count', authenticateToken, requireRole('admin'), getBroadcastCount);
+router.get('/notifications/analytics', authenticateToken, requireRole('admin'), getNotificationAnalytics);
+
+// Shop health + per-shop/per-locality unit economics (read-only; real data only)
+router.get('/shop-health', authenticateToken, requireRole('admin'), getShopHealth);
+
+// AI cost & scan-ops panel (read-only; real call logs only)
+router.get('/ai-ops', authenticateToken, requireRole('admin'), getAiOps);
 
 // Audit and operations viewer routes
 router.get('/audit', authenticateToken, requireRole('admin'), listAudit);

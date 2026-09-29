@@ -24,6 +24,8 @@ const paths = {
   idcard: <><rect x="3" y="5" width="18" height="14" rx="2" /><circle cx="9" cy="11" r="2" /><path d="M6 16c.5-1.5 1.7-2.5 3-2.5s2.5 1 3 2.5" /><path d="M14 9h4M14 13h4" /></>,
   lock: <><rect x="5" y="11" width="14" height="9" rx="2" /><path d="M8 11V8a4 4 0 0 1 8 0v3" /></>,
   car: <><path d="M5 16l1.5-5A2 2 0 0 1 8.4 9.5h7.2a2 2 0 0 1 1.9 1.5L19 16" /><path d="M4 16h16v4H4z" /><circle cx="8" cy="18.5" r="1.5" /><circle cx="16" cy="18.5" r="1.5" /></>,
+  megaphone: <><path d="M4 11v3l4 1 9 5V6l-9 4-4 1z" /><path d="M17 8a4 4 0 0 1 0 8" /><path d="M7 15v4a1.5 1.5 0 0 0 3 0v-3" /></>,
+  bank: <><path d="M3 10l9-6 9 6" /><path d="M5 10v8" /><path d="M9.5 10v8" /><path d="M14.5 10v8" /><path d="M19 10v8" /><path d="M3 20h18" /></>,
 }
 
 export default function Icon({ name, size = 20, className = '' }) {

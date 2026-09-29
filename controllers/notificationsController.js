@@ -216,6 +216,27 @@ async function adminCreateNotification(req, res, next) {
       resolvedUserId = uid;
     }
 
+    // Weekly broadcast guardrail (GTM retention ritual): max 2 broadcasts/week.
+    // Broadcast = user_id null. Targeted (user_id set) messages are unaffected.
+    if (resolvedUserId === null) {
+      const weekStart = new Date();
+      const day = (weekStart.getDay() + 6) % 7; // Monday = 0
+      weekStart.setHours(0, 0, 0, 0);
+      weekStart.setDate(weekStart.getDate() - day);
+      const countRes = await query(
+        `SELECT COUNT(*)::int AS used FROM notifications
+         WHERE user_id IS NULL AND created_at >= $1`,
+        [weekStart.toISOString()]
+      );
+      if (countRes.rows[0].used >= 2) {
+        return res.status(429).json({
+          error: 'Weekly broadcast limit reached (2/week). Try again next week.',
+          code: 'BROADCAST_LIMIT',
+          retryable: true,
+        });
+      }
+    }
+
     const result = await query(
       `INSERT INTO notifications (id, user_id, title, body, type, data)
        VALUES ($1, $2, $3, $4, $5, $6)

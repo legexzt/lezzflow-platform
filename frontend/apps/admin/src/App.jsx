@@ -16,6 +16,10 @@ import Audit from './pages/Audit.jsx';
 import Funnel from './pages/Funnel.jsx';
 import Offers from './pages/Offers.jsx';
 import Referrals from './pages/Referrals.jsx';
+import Schemes from './pages/Schemes.jsx';
+import Broadcasts from './pages/Broadcasts.jsx';
+import ShopHealth from './pages/ShopHealth.jsx';
+import AiOps from './pages/AiOps.jsx';
 
 export default function App() {
   const { firebaseUser, role, loading, verifyError } = useAuth();
@@ -48,6 +52,10 @@ export default function App() {
         <Route path="/funnel" element={<Funnel />} />
         <Route path="/offers" element={<Offers />} />
         <Route path="/referrals" element={<Referrals />} />
+        <Route path="/schemes" element={<Schemes />} />
+        <Route path="/notifications" element={<Broadcasts />} />
+        <Route path="/shop-health" element={<ShopHealth />} />
+        <Route path="/ai-ops" element={<AiOps />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

@@ -93,23 +93,38 @@ Do NOT include markdown formatting, backticks, or other text outside the JSON.`;
     }, timeoutMs);
   });
 
+  const startedAt = Date.now();
+  const { logAiCall } = require('./aiCallLog');
+
   let response;
   try {
     response = await Promise.race([
       bedrockClient.send(command, { abortSignal: controller.signal }),
       timeoutPromise,
     ]);
+  } catch (err) {
+    const timedOut = /timed out/i.test(err.message) || err.name === 'AbortError';
+    logAiCall({
+      kind: 'ai_scan',
+      status: timedOut ? 'timeout' : 'error',
+      latencyMs: Date.now() - startedAt,
+      error: err.message,
+    });
+    throw err;
   } finally {
     clearTimeout(timeoutId);
   }
 
   const contentList = response.output?.message?.content;
   if (!contentList || !contentList.length || !contentList[0].text) {
+    logAiCall({ kind: 'ai_scan', status: 'error', latencyMs: Date.now() - startedAt, error: 'Invalid response structure' });
     throw new Error('Invalid response structure from Bedrock Converse API');
   }
 
   const rawText = contentList[0].text;
-  return parseModelJson(rawText);
+  const parsed = parseModelJson(rawText);
+  logAiCall({ kind: 'ai_scan', status: 'ok', latencyMs: Date.now() - startedAt });
+  return parsed;
 }
 
 module.exports = {

@@ -456,11 +456,25 @@ img {
 
 /* ---------- Tables ---------- */
 .table-wrap {
+  overflow-x: auto;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: var(--radius);
-  overflow-x: auto;
   box-shadow: var(--shadow);
+}
+
+/* Generic card + muted text (admin cycle-3 pages) */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 16px 20px;
+}
+
+.muted {
+  color: var(--muted);
+  font-size: 0.9em;
 }
 
 .table {
