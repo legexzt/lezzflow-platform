@@ -33,6 +33,7 @@ const paths = {
   // Cycle-3: offline + sync indicators
   wifiOff: <><path d="M5 12a10 10 0 0 1 3-2.2M12 12a5 5 0 0 1 2.5-.7M8.5 15.5a5 5 0 0 1 5-1.4" /><path d="M12 19h.01" /><path d="M3 3l18 18" /></>,
   sync: <><path d="M21 12a9 9 0 1 1-2.6-6.4" /><path d="M21 3v6h-6" /></>,
+  bell: <><path d="M18 8a6 6 0 0 0-12 0c0 6-3 8-3 8h18s-3-2-3-8" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>,
 }
 
 export default function Icon({ name, size = 20, className = '' }) {

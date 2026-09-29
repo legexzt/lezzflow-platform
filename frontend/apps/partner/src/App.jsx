@@ -1,9 +1,13 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
 import { useAuth } from './AuthContext';
+import { AvailableCountProvider } from './AvailableCountContext';
+import BottomNav from './components/BottomNav';
 import Dashboard from './pages/Dashboard';
 import KycForm from './pages/KycForm';
 import KycStatus from './pages/KycStatus';
 import Login from './pages/Login';
+import More from './pages/More';
+import Notifications from './pages/Notifications';
 
 function Loader() {
   return (
@@ -41,7 +45,7 @@ function Protected({ children, requireApproved = false }) {
   return children;
 }
 
-export default function App() {
+function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
@@ -69,7 +73,38 @@ export default function App() {
           </Protected>
         }
       />
+      <Route
+        path="/more"
+        element={
+          <Protected requireApproved>
+            <More />
+          </Protected>
+        }
+      />
+      <Route
+        path="/notifications"
+        element={
+          <Protected requireApproved>
+            <Notifications />
+          </Protected>
+        }
+      />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
 }
+
+function AppShell() {
+  // Bottom nav only for signed-in partners with approved KYC — never on
+  // the login / KYC screens.
+  const { firebaseUser, kycStatus } = useAuth();
+  const showNav = firebaseUser && kycStatus === 'approved';
+  return (
+    <AvailableCountProvider>
+      <App />
+      {showNav ? <BottomNav /> : null}
+    </AvailableCountProvider>
+  );
+}
+
+export default AppShell;

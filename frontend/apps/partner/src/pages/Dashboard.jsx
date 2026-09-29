@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import Alert from '../components/Alert';
 import Header from '../components/Header';
 import Icon from '../components/Icon';
 import OtpModal from '../components/OtpModal';
 import TrainingPrimer from '../components/TrainingPrimer';
+import { useAvailableCount } from '../AvailableCountContext';
 import { useLang } from '../i18n.jsx';
 import {
   acceptDelivery,
@@ -176,8 +178,24 @@ export default function Dashboard() {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
 
-  // UI state
-  const [activeTab, setActiveTab] = useState('deliveries');
+  // UI state — the active tab is deep-linked via ?tab= so the bottom nav
+  // (Deliveries / Earnings / Refer / More) and browser back/forward stay in sync.
+  const [searchParams] = useSearchParams();
+  const VALID_TABS = ['deliveries', 'earnings', 'refer'];
+  const tabFromUrl = searchParams.get('tab');
+  const [activeTab, setActiveTab] = useState(
+    VALID_TABS.includes(tabFromUrl) ? tabFromUrl : 'deliveries'
+  );
+
+  useEffect(() => {
+    if (VALID_TABS.includes(tabFromUrl) && tabFromUrl !== activeTab) {
+      setActiveTab(tabFromUrl);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tabFromUrl]);
+
+  // The available-request count badges the bottom-nav Deliveries item.
+  const { setCount: setAvailableCount } = useAvailableCount();
   const [otpModal, setOtpModal] = useState({ isOpen: false, type: null, delivery: null });
   const [showPrimer, setShowPrimer] = useState(false);
   const [pendingAcceptDelivery, setPendingAcceptDelivery] = useState(null);
@@ -347,6 +365,10 @@ export default function Dashboard() {
 
   const active = deliveries.filter((d) => ['accepted', 'picked'].includes(getStatus(d)));
   const available = deliveries.filter((d) => !INACTIVE.has(getStatus(d)));
+
+  useEffect(() => {
+    setAvailableCount(available.length);
+  }, [available.length, setAvailableCount]);
   const cancelledTrips = useMemo(
     () => deliveries.filter((d) => getStatus(d) === 'cancelled'),
     [deliveries],
@@ -913,43 +935,8 @@ export default function Dashboard() {
           </div>
         ) : null}
 
-        {/* Navigation Tabs */}
-        <div className="tab-bar" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'deliveries'}
-            className={`tab-btn ${activeTab === 'deliveries' ? 'active' : ''}`}
-            onClick={() => setActiveTab('deliveries')}
-          >
-            <Icon name="box" size={18} />
-            <span>{t('tabDeliveries')}</span>
-            {available.length > 0 ? (
-              <span className="tab-pill">{available.length}</span>
-            ) : null}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'earnings'}
-            className={`tab-btn ${activeTab === 'earnings' ? 'active' : ''}`}
-            onClick={() => setActiveTab('earnings')}
-          >
-            <Icon name="money" size={18} />
-            <span>{t('tabEarnings')}</span>
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === 'refer'}
-            className={`tab-btn ${activeTab === 'refer' ? 'active' : ''}`}
-            onClick={() => setActiveTab('refer')}
-          >
-            <Icon name="userPlus" size={18} />
-            <span>{t('tabRefer')}</span>
-          </button>
-        </div>
-
+        {/* Navigation lives in the bottom nav now (single primary navigation).
+            The available-request count badges the Deliveries item there. */}
         {/* Tab 1: Deliveries */}
         {activeTab === 'deliveries' ? (
           <>

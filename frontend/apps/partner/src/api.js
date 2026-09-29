@@ -157,4 +157,22 @@ export async function fetchRecap() {
   return data;
 }
 
+/** Notification inbox (broadcasts + personal) — real rows, per-user read state. */
+export async function fetchNotifications(limit = 50) {
+  const { data } = await api.get('/v1/notifications', { params: { limit } });
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data.notifications)) return data.notifications;
+  return [];
+}
+
+export async function markNotificationRead(id) {
+  const { data } = await api.patch(`/v1/notifications/${id}/read`);
+  return data;
+}
+
+export async function markAllNotificationsRead() {
+  const { data } = await api.post('/v1/notifications/read-all');
+  return data;
+}
+
 export default api;

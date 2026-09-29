@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useAuth } from '../AuthContext';
 import { useLang } from '../i18n.jsx';
+import NotifBell from './NotifBell';
 
 export default function Header() {
   const { firebaseUser, signOut } = useAuth();
@@ -22,6 +23,7 @@ export default function Header() {
         )}
         <span className="app-tag">Partner</span>
         <span className="flex-spacer" />
+        {firebaseUser ? <NotifBell /> : null}
         <button
           type="button"
           className="btn btn-ghost btn-sm lang-toggle"
