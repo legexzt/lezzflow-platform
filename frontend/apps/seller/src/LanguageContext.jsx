@@ -28,6 +28,11 @@ const STRINGS = {
     cost_price: 'Cost price (optional)', cost_price_hint: 'What you paid for it — used only to show your margin.',
     margin: 'margin', print_slip: 'Print slip', packing_slip: 'Packing slip',
     shop_open: 'Shop is open',
+    schemes_title: 'Sarkari Yojanaen', schemes_sub: 'Government schemes that can help your business — check what fits you.',
+    schemes_check: 'check status', schemes_check_status: 'Check status',
+    schemes_note: 'Informational only — no loan or approval is promised. Always verify on the official site.',
+    notif_title: 'Notifications', notif_mark_all: 'Mark all read', notif_empty: 'No notifications yet.',
+    notif_broadcast: 'Broadcast', notif_load_failed: 'Could not load notifications.',
   },
   hi: {
     nav_home: 'होम', nav_orders: 'ऑर्डर', nav_products: 'उत्पाद',
@@ -54,6 +59,11 @@ const STRINGS = {
     cost_price: 'लागत मूल्य (वैकल्पिक)', cost_price_hint: 'आपने कितने में खरीदा — सिर्फ आपका मार्जिन दिखाने के लिए।',
     margin: 'मार्जिन', print_slip: 'पर्ची प्रिंट करें', packing_slip: 'पैकिंग पर्ची',
     shop_open: 'दुकान खुली है',
+    schemes_title: 'सरकारी योजनाएं', schemes_sub: 'सरकारी योजनाएं जो आपके धंधे में मदद कर सकती हैं — देखें क्या फिट है।',
+    schemes_check: 'स्टेटस जांचें', schemes_check_status: 'स्टेटस जांचें',
+    schemes_note: 'सिर्फ जानकारी के लिए — कोई लोन या मंज़ूरी का वादा नहीं। हमेशा आधिकारिक साइट पर जांचें।',
+    notif_title: 'सूचनाएं', notif_mark_all: 'सब पढ़ लिया', notif_empty: 'अभी कोई सूचना नहीं।',
+    notif_broadcast: 'प्रसारण', notif_load_failed: 'सूचनाएं लोड नहीं हो सकीं।',
   },
   hing: {
     nav_home: 'Home', nav_orders: 'Orders', nav_products: 'Products',
@@ -80,6 +90,11 @@ const STRINGS = {
     cost_price: 'Cost price (optional)', cost_price_hint: 'Aapne kitne me kharida — sirf aapka margin dikhane ke liye.',
     margin: 'margin', print_slip: 'Parchi print karo', packing_slip: 'Packing parchi',
     shop_open: 'Dukaan khuli hai',
+    schemes_title: 'Sarkari Yojanaen', schemes_sub: 'Sarkari schemes jo aapke dhandhe me madad kar sakti hain — dekho kya fit hai.',
+    schemes_check: 'status check karo', schemes_check_status: 'Status check karo',
+    schemes_note: 'Sirf jaankari ke liye — koi loan ya approval ka vaada nahi. Hamesha official site pe verify karo.',
+    notif_title: 'Notifications', notif_mark_all: 'Sab padh liya', notif_empty: 'Abhi koi notification nahi.',
+    notif_broadcast: 'Broadcast', notif_load_failed: 'Notifications load nahi ho sake.',
   },
 }
 

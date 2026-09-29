@@ -69,6 +69,10 @@ export default function More() {
           <Icon name="home" size={20} />
           <span>My Shop</span>
         </Link>
+        <Link to="/notifications" className="settings-row">
+          <Icon name="bell" size={20} />
+          <span>{t('notif_title')}</span>
+        </Link>
         <Link to="/advisory" className="settings-row">
           <Icon name="chart" size={20} />
           <span>Business Advisory</span>

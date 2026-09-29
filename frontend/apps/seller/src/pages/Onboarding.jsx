@@ -542,6 +542,15 @@ function StepGoLive({ shop, productCount, onLive }) {
         </div>
       </div>
 
+      {/* GTM cycle-3: schemes as the onboarding door-opener — informational only */}
+      <div className="card" style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: 12 }}>
+        <Icon name="bank" size={20} />
+        <p className="muted small" style={{ margin: 0 }}>
+          Sarkari Yojanaen aapke dhandhe me madad kar sakti hain — dashboard par
+          schemes dekho, official site par status check karo. Koi vaada nahi, sirf jaankari.
+        </p>
+      </div>
+
       {error && (
         <div className="ob-error">
           <Icon name="warning" size={16} />

@@ -454,6 +454,11 @@ textarea {
   color: var(--purple);
 }
 
+.badge-amber {
+  background: #fff8e1;
+  color: #b45309;
+}
+
 .status-placed {
   background: #fffbeb;
   color: var(--amber);
@@ -1916,4 +1921,114 @@ textarea {
     size: 80mm auto;
     margin: 0;
   }
+}
+
+/* ---- GTM cycle-3: schemes card + notifications ---- */
+.schemes-card {
+  margin-top: 12px;
+}
+
+.schemes-head {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-bottom: 8px;
+}
+
+.schemes-head h3 {
+  margin: 0;
+  font-size: 15px;
+}
+
+.schemes-head p {
+  margin: 2px 0 0;
+}
+
+.schemes-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.scheme-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-top: 1px solid var(--line);
+}
+
+.scheme-item strong {
+  font-size: 14px;
+}
+
+.scheme-link {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--green-dark);
+  text-decoration: none;
+  align-self: flex-start;
+}
+
+.schemes-note {
+  margin: 10px 0 0;
+}
+
+.notif-bell {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  color: inherit;
+  text-decoration: none;
+}
+
+.notif-bell:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.notif-badge {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+}
+
+.notif-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.notif-item {
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.notif-item.unread {
+  border-left: 3px solid var(--green);
+}
+
+.notif-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.dot-unread {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  flex-shrink: 0;
 }

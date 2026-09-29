@@ -15,6 +15,7 @@ import Offers from './pages/Offers.jsx'
 import Advisory from './pages/Advisory.jsx'
 import Money from './pages/Money.jsx'
 import More from './pages/More.jsx'
+import Notifications from './pages/Notifications.jsx'
 import Onboarding from './pages/Onboarding.jsx'
 
 export default function App() {
@@ -41,6 +42,7 @@ export default function App() {
             <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
             <Route path="/money" element={<ProtectedRoute><Money /></ProtectedRoute>} />
             <Route path="/more" element={<ProtectedRoute><More /></ProtectedRoute>} />
+            <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
             <Route path="/onboarding" element={<ProtectedRoute><Onboarding /></ProtectedRoute>} />
             <Route path="/settings" element={<Navigate to="/more" replace />} />
             <Route path="*" element={<Navigate to="/" replace />} />

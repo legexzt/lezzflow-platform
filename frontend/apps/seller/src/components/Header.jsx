@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAuth } from '../AuthContext.jsx'
 import { signOutUser } from '../firebase.js'
+import NotificationBell from './NotificationBell.jsx'
 
 export default function Header() {
   const { user } = useAuth()
@@ -25,6 +26,7 @@ export default function Header() {
         </div>
         <div className="header-right">
           {displayName && <span className="header-user">{displayName.split(' ')[0]}</span>}
+          <NotificationBell />
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => signOutUser()}>
             Sign out
           </button>

@@ -8,6 +8,7 @@ import Icon from '../components/Icon.jsx'
 import ChecklistCard from '../components/ChecklistCard.jsx'
 import LowStockCard from '../components/LowStockCard.jsx'
 import SlowMoversCard from '../components/SlowMoversCard.jsx'
+import SchemesCard from '../components/SchemesCard.jsx'
 
 function toList(data, key) {
   if (Array.isArray(data)) return data
@@ -179,6 +180,9 @@ export default function Dashboard() {
           View orders
         </Link>
       </div>
+
+      {/* GTM cycle-3: Sarkari Yojanaen — the onboarding door-opener */}
+      <SchemesCard />
 
       {/* Item 5: Low stock card — below quick-actions */}
       <LowStockCard shopId={shop.id} />

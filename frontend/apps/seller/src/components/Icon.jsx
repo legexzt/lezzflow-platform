@@ -27,6 +27,7 @@ const paths = {
   // Phase 2 additions — spec-required new icons (Appendix A §11)
   book: <><path d="M4 3h13a2 2 0 0 1 2 2v13a2 2 0 0 1-2 2H4" /><path d="M4 3a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2" /><path d="M8 7h7M8 11h7M8 15h4" /></>,
   bell: <><path d="M18 8a6 6 0 0 0-12 0c0 6-3 8-3 8h18s-3-2-3-8" /><path d="M13.73 21a2 2 0 0 1-3.46 0" /></>,
+  bank: <><path d="M3 9l9-6 9 6" /><path d="M4 9v10M20 9v10" /><path d="M8 12v5M12 12v5M16 12v5" /><path d="M2 20h20" /></>,
   clock: <><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 3" /></>,
   megaphone: <><path d="M3 11v2a7 7 0 0 0 7 7h1" /><path d="M11 20l2-5" /><path d="M5 12h14l2-8H5" /><path d="M5 12V6" /></>,
   // Utility icons used by new components
