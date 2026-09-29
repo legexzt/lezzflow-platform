@@ -283,6 +283,10 @@ export default function Dashboard() {
             <span><Icon name="cart" size={16} /> View products</span>
             <span>→</span>
           </Link>
+          <Link className="quick-link" to="/launch-gate">
+            <span><Icon name="location" size={16} /> Cluster launch gate</span>
+            <span>→</span>
+          </Link>
         </div>
       </section>
     </div>

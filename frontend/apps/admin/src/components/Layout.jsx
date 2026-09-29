@@ -2,23 +2,44 @@ import { NavLink } from 'react-router-dom';
 import { useAuth } from '../AuthContext.jsx';
 import Icon from './Icon.jsx';
 
-const NAV_ITEMS = [
-  { to: '/', label: 'Dashboard', icon: 'chart', end: true },
-  { to: '/shops', label: 'Shops', icon: 'home' },
-  { to: '/orders', label: 'Orders', icon: 'box' },
-  { to: '/users', label: 'Users', icon: 'users' },
-  { to: '/products', label: 'Products', icon: 'cart' },
-  { to: '/kyc', label: 'KYC Review', icon: 'idcard' },
-  { to: '/analytics', label: 'Locality analytics', icon: 'location' },
-  { to: '/sos', label: 'SOS Alerts', icon: 'warning' },
-  { to: '/audit', label: 'Audit Log', icon: 'receipt' },
-  { to: '/funnel', label: 'Onboarding Funnel', icon: 'chart' },
-  { to: '/offers', label: 'Offers', icon: 'bag' },
-  { to: '/referrals', label: 'Referrals', icon: 'users' },
-  { to: '/schemes', label: 'Schemes', icon: 'bank' },
-  { to: '/notifications', label: 'Broadcasts', icon: 'megaphone' },
-  { to: '/shop-health', label: 'Shop Health', icon: 'home' },
-  { to: '/ai-ops', label: 'AI Ops', icon: 'scan' },
+const NAV_SECTIONS = [
+  {
+    label: 'Overview',
+    items: [
+      { to: '/', label: 'Dashboard', icon: 'chart', end: true },
+      { to: '/launch-gate', label: 'Launch Gate', icon: 'location' },
+    ],
+  },
+  {
+    label: 'Operations',
+    items: [
+      { to: '/orders', label: 'Orders', icon: 'box' },
+      { to: '/sos', label: 'SOS Alerts', icon: 'warning' },
+      { to: '/kyc', label: 'KYC Review', icon: 'idcard' },
+      { to: '/shop-health', label: 'Shop Health', icon: 'home' },
+    ],
+  },
+  {
+    label: 'Growth',
+    items: [
+      { to: '/shops', label: 'Shops', icon: 'home' },
+      { to: '/products', label: 'Products', icon: 'cart' },
+      { to: '/offers', label: 'Offers', icon: 'bag' },
+      { to: '/referrals', label: 'Referrals', icon: 'users' },
+      { to: '/schemes', label: 'Schemes', icon: 'bank' },
+      { to: '/notifications', label: 'Broadcasts', icon: 'megaphone' },
+      { to: '/analytics', label: 'Locality analytics', icon: 'location' },
+      { to: '/funnel', label: 'Onboarding Funnel', icon: 'chart' },
+    ],
+  },
+  {
+    label: 'System',
+    items: [
+      { to: '/users', label: 'Users', icon: 'users' },
+      { to: '/audit', label: 'Audit Log', icon: 'receipt' },
+      { to: '/ai-ops', label: 'AI Ops', icon: 'scan' },
+    ],
+  },
 ];
 
 export default function Layout({ children }) {
@@ -34,16 +55,21 @@ export default function Layout({ children }) {
           <span className="sidebar-tag">Admin</span>
         </div>
         <nav className="sidebar-nav">
-          {NAV_ITEMS.map((item) => (
-            <NavLink
-              key={item.to}
-              to={item.to}
-              end={item.end}
-              className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
-            >
-              <span className="nav-icon"><Icon name={item.icon} size={20} /></span>
-              {item.label}
-            </NavLink>
+          {NAV_SECTIONS.map((section) => (
+            <div key={section.label} className="nav-section">
+              <span className="nav-section-label">{section.label}</span>
+              {section.items.map((item) => (
+                <NavLink
+                  key={item.to}
+                  to={item.to}
+                  end={item.end}
+                  className={({ isActive }) => (isActive ? 'nav-link active' : 'nav-link')}
+                >
+                  <span className="nav-icon"><Icon name={item.icon} size={20} /></span>
+                  {item.label}
+                </NavLink>
+              ))}
+            </div>
           ))}
         </nav>
         <div className="sidebar-footer">

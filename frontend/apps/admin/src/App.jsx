@@ -20,6 +20,7 @@ import Schemes from './pages/Schemes.jsx';
 import Broadcasts from './pages/Broadcasts.jsx';
 import ShopHealth from './pages/ShopHealth.jsx';
 import AiOps from './pages/AiOps.jsx';
+import LaunchGate from './pages/LaunchGate.jsx';
 
 export default function App() {
   const { firebaseUser, role, loading, verifyError } = useAuth();
@@ -56,6 +57,7 @@ export default function App() {
         <Route path="/notifications" element={<Broadcasts />} />
         <Route path="/shop-health" element={<ShopHealth />} />
         <Route path="/ai-ops" element={<AiOps />} />
+        <Route path="/launch-gate" element={<LaunchGate />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Layout>

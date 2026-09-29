@@ -1184,3 +1184,46 @@ img {
   font-weight: 600;
   margin: 0;
 }
+
+/* ---- Launch gate (GTM cycle-3) ---- */
+.stat-sub {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--muted, #64748b);
+}
+
+.stat-note {
+  font-size: 0.72rem;
+  color: var(--muted, #64748b);
+  margin-top: 0.25rem;
+}
+
+.progress-track {
+  height: 8px;
+  background: var(--line, #e2e8f0);
+  border-radius: 999px;
+  overflow: hidden;
+  margin: 0.5rem 0;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--amber-500, #f59e0b);
+  border-radius: 999px;
+  transition: width 0.4s ease;
+}
+
+.progress-fill.is-ready {
+  background: var(--green-600, #16a34a);
+}
+
+/* ---- Grouped sidebar nav ---- */
+.nav-section-label {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted, #64748b);
+  padding: 0.9rem 0.75rem 0.3rem;
+}
