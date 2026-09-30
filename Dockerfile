@@ -16,4 +16,6 @@ RUN mkdir -p uploads
 
 EXPOSE 3000
 
-CMD ["npm", "start"]
+# PID 1 = node directly so Docker SIGTERM reaches the app's graceful-shutdown handler
+# (npm as PID 1 does not forward signals, causing SIGKILL on every stop/restart).
+CMD ["node", "server.js"]
