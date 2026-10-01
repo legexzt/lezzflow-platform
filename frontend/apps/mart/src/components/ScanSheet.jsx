@@ -49,7 +49,7 @@ export default function ScanSheet({ items, onClose }) {
             const res = await api.get('/api/products', {
               params: { search: it.item, limit: 3 },
             });
-            return asArray(res.data, 'products')[0] || null;
+            return asArray(res.data, 'data')[0] || null;
           } catch {
             return null;
           }

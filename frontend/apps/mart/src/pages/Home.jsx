@@ -104,7 +104,7 @@ export default function Home() {
     ])
       .then(([prodRes, shopRes]) => {
         if (!mounted) return;
-        setProducts(asArray(prodRes.data, 'products'));
+        setProducts(asArray(prodRes.data, 'data'));
         setShops(asArray(shopRes.data, 'shops'));
       })
       .catch((e) => {
