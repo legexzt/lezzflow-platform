@@ -20,9 +20,9 @@ services:
       timeout: 5s
       retries: 5
 
-  api:
+  backend:
     build: .
-    container_name: lezzflow-api
+    container_name: lezzflow-backend
     restart: unless-stopped
     ports:
       - "3000:3000"
@@ -45,6 +45,8 @@ services:
         condition: service_healthy
     volumes:
       - ./uploads:/app/uploads
+      - ./scripts:/app/scripts:ro
+      - ./db:/app/db:ro
 
 volumes:
   postgres_data:
