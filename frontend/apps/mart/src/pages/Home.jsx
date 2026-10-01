@@ -48,6 +48,35 @@ function ProductCard({ product, shopName, onAdd }) {
   );
 }
 
+function ShopAvatar({ shop }) {
+  const hasPhoto = Boolean(shop.photo_url && String(shop.photo_url).trim());
+  const [imgOk, setImgOk] = useState(hasPhoto);
+  return (
+    <span
+      className="shop-avatar-circle"
+      style={{ background: avatarColor(shop.id ?? shop.name) }}
+    >
+      {imgOk ? (
+        <img
+          src={shop.photo_url}
+          alt={shop.name}
+          style={{
+            display: 'block',
+            width: '100%',
+            height: '100%',
+            objectFit: 'cover',
+            borderRadius: '50%',
+          }}
+          loading="lazy"
+          onError={() => setImgOk(false)}
+        />
+      ) : (
+        (shop.name || '?').trim().charAt(0).toUpperCase()
+      )}
+    </span>
+  );
+}
+
 export default function Home() {
   const { addItem } = useCart();
   const [products, setProducts] = useState([]);
@@ -212,12 +241,7 @@ export default function Home() {
                 className={`shop-avatar${shopFilter === shop.id ? ' active' : ''}`}
                 onClick={() => setShopFilter(shopFilter === shop.id ? null : shop.id)}
               >
-                <span
-                  className="shop-avatar-circle"
-                  style={{ background: avatarColor(shop.id ?? shop.name) }}
-                >
-                  {(shop.name || '?').trim().charAt(0).toUpperCase()}
-                </span>
+                <ShopAvatar shop={shop} />
                 <span className="shop-avatar-name">{shop.name}</span>
               </button>
             ))}
