@@ -18,9 +18,10 @@ export default function Header() {
       <div className="header-inner">
         <Link to={user ? '/' : '/login'} className="brand">
           <img
-            src="/logo.svg"
+            src="/brand-banner.png"
             alt="LezzFlow"
             className="brand-logo"
+            style={{ height: '38px', width: 'auto' }}
           />
           <span className="brand-app">Mart</span>
         </Link>
