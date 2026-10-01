@@ -84,6 +84,7 @@ export default function Home() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [query, setQuery] = useState('');
+  const [searchResults, setSearchResults] = useState(null); // null = no active server search
   const [category, setCategory] = useState('All');
   const [shopFilter, setShopFilter] = useState(null); // shop id, or null = all shops
   const [scanning, setScanning] = useState(false);
@@ -119,6 +120,31 @@ export default function Home() {
     };
   }, []);
 
+  // Server-side search: the initial load only has the first 100 products, so
+  // debounce the query and let the backend search the full catalog.
+  useEffect(() => {
+    const q = query.trim();
+    if (!q) {
+      setSearchResults(null);
+      return undefined;
+    }
+    let stale = false;
+    const timer = setTimeout(() => {
+      api
+        .get('/api/products', { params: { search: q, limit: 100 } })
+        .then((res) => {
+          if (!stale) setSearchResults(asArray(res.data, 'data'));
+        })
+        .catch(() => {
+          // Search failed — leave the current list in place.
+        });
+    }, 400);
+    return () => {
+      stale = true;
+      clearTimeout(timer);
+    };
+  }, [query]);
+
   const shopNames = useMemo(() => {
     const map = new Map();
     for (const shop of shops) map.set(String(shop.id), shop.name);
@@ -136,13 +162,16 @@ export default function Home() {
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return products.filter((p) => {
-      if (q && !(p.name || '').toLowerCase().includes(q)) return false;
+    // searchResults come pre-filtered by the backend; only the category and
+    // shop chips apply on top of them.
+    const pool = searchResults ?? products;
+    return pool.filter((p) => {
+      if (q && searchResults === null && !(p.name || '').toLowerCase().includes(q)) return false;
       if (category !== 'All' && p.category !== category) return false;
       if (shopFilter !== null && String(p.shop_id) !== String(shopFilter)) return false;
       return true;
     });
-  }, [products, query, category, shopFilter]);
+  }, [products, searchResults, query, category, shopFilter]);
 
   const sections = useMemo(() => {
     const groups = new Map();
