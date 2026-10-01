@@ -36,10 +36,14 @@ MAP_JSON = os.path.join(HERE, "seed_data", "image_fix_map.json")
 
 UA = "LezzFlowMartTestData/1.0 (test catalog cleanup; contact via github.com/legexzt/lezzflow-platform)"
 API_SLEEP = 1.05
-DL_GAP = 0.25
-MIN_DIM = 250
+DL_GAP = 0.6
+MIN_DIM = 100
 BORDER_FRac = 0.12
 WHITE_T = 240
+# packaging_* only wins over front_* when clearly cleaner (avoids swapping a
+# decent front label for a back-panel shot)
+PACK_MIN_SCORE = 0.40
+PACK_MARGIN_OVER_FRONT = 0.25
 
 
 def http_get(url, timeout=25):
@@ -68,15 +72,16 @@ def barcode_path(barcode):
     return f"{bc[0:3]}/{bc[3:6]}/{bc[6:9]}/{bc[9:]}"
 
 
-def front_url(barcode, key, imgid, rev, size=400):
+def selected_url(barcode, key, rev, size=400):
     # Canonical OFF pattern (no imgid in path):
-    #   /images/products/<barcode-path>/front_<lang>.<rev>.<size>.jpg
+    #   /images/products/<barcode-path>/{front,packaging}[_<lang>].<rev>.<size>.jpg
     lang = ""
     if "_" in key:
         lang = "_" + key.split("_", 1)[1]
+    kind = key.split("_", 1)[0]  # front | packaging
     return (
         f"https://images.openfoodfacts.org/images/products/"
-        f"{barcode_path(barcode)}/front{lang}.{rev}.{size}.jpg"
+        f"{barcode_path(barcode)}/{kind}{lang}.{rev}.{size}.jpg"
     )
 
 
@@ -108,19 +113,32 @@ def border_whiteness(img):
     return max(0.0, min(1.0, border_white))
 
 
-def score_url(url):
-    try:
-        data = http_get(url, timeout=25)
-        img = Image.open(BytesIO(data))
-        return border_whiteness(img)
-    except Exception as e:
-        print(f"    download/score failed for {url[:70]}: {type(e).__name__}", flush=True)
-        return None
+def score_url(url, tries=3):
+    for attempt in range(tries):
+        try:
+            data = http_get(url, timeout=25)
+            img = Image.open(BytesIO(data))
+            return border_whiteness(img)
+        except Exception as e:
+            if attempt < tries - 1:
+                time.sleep(1.5 * (attempt + 1))
+                continue
+            print(f"    download/score failed for {url[:70]}: {type(e).__name__} (after {tries} tries)", flush=True)
+            return None
 
 
 def main():
-    full_report_path = sys.argv[1] if len(sys.argv) > 1 else "/tmp/image_fix_full.json"
-    with open(PRODUCTS_JSON) as f:
+    # argv: [input_products_json] [output_map_json] [full_report_path]
+    # Defaults preserve the original one-arg behaviour (arg1 = report path).
+    args = sys.argv[1:]
+    if len(args) >= 3:
+        in_path, map_path, full_report_path = args[0], args[1], args[2]
+    elif len(args) == 2:
+        in_path, map_path, full_report_path = PRODUCTS_JSON, MAP_JSON, args[1]
+    else:
+        in_path, map_path = PRODUCTS_JSON, MAP_JSON
+        full_report_path = args[0] if args else "/tmp/image_fix_full.json"
+    with open(in_path) as f:
         products = json.load(f)
     print(f"{len(products)} products to process", flush=True)
 
@@ -154,44 +172,63 @@ def main():
         product = doc.get("product") or {}
         images = product.get("images") or {}
         fronts = {}
+        packs = {}
         for k, v in images.items():
-            if isinstance(k, str) and k.startswith("front") and isinstance(v, dict):
+            if isinstance(k, str) and isinstance(v, dict):
                 imgid = v.get("imgid")
                 rev = v.get("rev")
-                if imgid and rev:
+                if not (imgid and rev):
+                    continue
+                if k.startswith("front"):
                     fronts[str(imgid)] = (k, str(imgid), str(rev))
-        if not fronts:
+                elif k.startswith("packaging"):
+                    packs[str(imgid)] = (k, str(imgid), str(rev))
+        if not fronts and not packs:
             stats["api_miss"] += 1
             full[code] = {"name": name, "status": "no_front_images", "kept": current}
-            print("    no front images -> keep current", flush=True)
+            print("    no front/packaging images -> keep current", flush=True)
             continue
         stats["api_ok"] += 1
 
         # 2) score current + candidates
-        print(f"    scoring current + {len(fronts)} front candidate(s)", flush=True)
+        print(f"    scoring current + {len(fronts)} front + {len(packs)} packaging candidate(s)", flush=True)
         s_cur = score_url(current) if current else None
         time.sleep(DL_GAP)
-        best_url, best_score = None, -1.0
-        for _imgid, (key, imgid, rev) in fronts.items():
-            url = front_url(code, key, imgid, rev, 400)
-            if url == current:
-                s = s_cur
-            else:
-                s = score_url(url)
-                time.sleep(DL_GAP)
-            print(f"    candidate {key} imgid={imgid} rev={rev} score={s}", flush=True)
-            if s is not None and s > best_score:
-                best_score, best_url = s, url
+
+        def best_of(cands):
+            best_url, best_score, best_key = None, None, None
+            for _imgid, (key, imgid, rev) in cands.items():
+                url = selected_url(code, key, rev, 400)
+                if url == current:
+                    s = s_cur
+                else:
+                    s = score_url(url)
+                    time.sleep(DL_GAP)
+                print(f"    candidate {key} imgid={imgid} rev={rev} score={s}", flush=True)
+                if s is not None and (best_score is None or s > best_score):
+                    best_url, best_score, best_key = url, s, key
+            return best_url, best_score, best_key
+
+        f_url, f_score, f_key = best_of(fronts)
+        p_url, p_score, p_key = best_of(packs)
+
+        # packaging wins only when clearly cleaner than any front
+        if (p_url and p_score is not None and p_score >= PACK_MIN_SCORE
+                and (f_score is None or p_score > f_score + PACK_MARGIN_OVER_FRONT)):
+            winner_url, winner_score, winner_kind = p_url, p_score, "packaging:" + str(p_key)
+        else:
+            winner_url, winner_score, winner_kind = f_url, f_score, "front:" + str(f_key)
 
         # 3) decide
-        if best_url and (s_cur is None or best_score >= s_cur):
-            if best_url != current:
-                changed_map[code] = best_url
+        if winner_url and (s_cur is None or winner_score >= s_cur):
+            if winner_url != current:
+                changed_map[code] = winner_url
                 stats["upgraded"] += 1
                 full[code] = {"name": name, "status": "upgraded",
-                              "old": current, "new": best_url,
-                              "old_score": s_cur, "new_score": best_score}
-                print(f"    UPGRADED {s_cur} -> {best_score}", flush=True)
+                              "kind": winner_kind,
+                              "old": current, "new": winner_url,
+                              "old_score": s_cur, "new_score": winner_score}
+                print(f"    UPGRADED [{winner_kind}] {s_cur} -> {winner_score}", flush=True)
             else:
                 stats["kept"] += 1
                 full[code] = {"name": name, "status": "kept_best_is_current",
@@ -200,15 +237,16 @@ def main():
         else:
             stats["kept"] += 1
             full[code] = {"name": name, "status": "kept_current_wins",
-                          "kept": current, "old_score": s_cur, "best_score": best_score}
-            print(f"    current wins ({s_cur} vs {best_score}), no change", flush=True)
+                          "kept": current, "old_score": s_cur,
+                          "best_score": winner_score, "best_kind": winner_kind}
+            print(f"    current wins ({s_cur} vs {winner_score}), no change", flush=True)
 
-    with open(MAP_JSON, "w") as f:
+    with open(map_path, "w") as f:
         json.dump(changed_map, f, indent=1)
     with open(full_report_path, "w") as f:
         json.dump({"stats": stats, "products": full}, f, indent=1)
     print("STATS:", json.dumps(stats), flush=True)
-    print(f"map -> {MAP_JSON} ({len(changed_map)} upgrades)", flush=True)
+    print(f"map -> {map_path} ({len(changed_map)} upgrades)", flush=True)
     print(f"full report -> {full_report_path}", flush=True)
 
 
