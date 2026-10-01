@@ -1,4 +1,4 @@
-const { scanProductImage } = require('../services/bedrockService');
+const { scanProductImage, scanShoppingList } = require('../services/bedrockService');
 const { lookupBarcode } = require('../services/barcodeService');
 
 /**
@@ -48,7 +48,34 @@ async function scanBarcode(req, res, next) {
   }
 }
 
+/**
+ * POST /api/scan/list
+ * Accepts multipart image upload of a handwritten/printed shopping list,
+ * returns extracted items as { items: [{ item, qty }] }
+ */
+async function scanList(req, res, next) {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'Image file is required in multipart field (image or file)' });
+    }
+
+    try {
+      const items = await scanShoppingList(req.file.buffer, req.file.mimetype);
+      return res.json({ items });
+    } catch (modelError) {
+      console.error('AI list scan error:', modelError);
+      return res.status(502).json({
+        error: 'AI list scan failed',
+        details: modelError.message,
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+}
+
 module.exports = {
   scanAi,
   scanBarcode,
+  scanList,
 };
