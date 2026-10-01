@@ -530,6 +530,34 @@ h3 {
   box-shadow: 0 4px 12px rgba(22, 163, 74, 0.35);
 }
 
+/* Product detail page */
+.product-detail-image {
+  display: block;
+  width: 100%;
+  max-width: 320px;
+  height: auto;
+  max-height: 320px;
+  aspect-ratio: 1 / 1;
+  object-fit: contain;
+  background: #fff;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius);
+  margin: 0 auto 1rem;
+}
+
+.product-detail-info {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.product-detail-info-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
 /* Cart */
 .cart-list {
   display: flex;

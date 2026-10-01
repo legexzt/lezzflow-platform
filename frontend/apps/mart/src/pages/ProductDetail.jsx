@@ -4,6 +4,23 @@ import api from '../api';
 import { useCart } from '../CartContext.jsx';
 import { formatPrice, getProductImage } from '../shopUtils';
 
+// Turn a stored category slug like "beverages-and-beverages-preparations"
+// into a human-readable label like "Beverages".
+function humanizeCategory(slug) {
+  const words = String(slug || '')
+    .toLowerCase()
+    .split(/[-_\s]+/)
+    .filter((w) => w && w !== 'and');
+  const seen = new Set();
+  const unique = [];
+  for (const word of words) {
+    if (seen.has(word)) break; // slug repeats itself (parent-and-parent-child) — stop
+    seen.add(word);
+    unique.push(word);
+  }
+  return unique.map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
+}
+
 export default function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -127,7 +144,7 @@ export default function ProductDetail() {
   const description =
     (product.description || '').trim() ||
     `Fresh, quality ${
-      product.category ? String(product.category).toLowerCase() : 'groceries'
+      humanizeCategory(product.category) || 'Groceries'
     } sourced daily from your neighbourhood kirana.`;
 
   return (
@@ -140,7 +157,7 @@ export default function ProductDetail() {
         <img
           src={image}
           alt={product.name}
-          className="product-image product-detail-image"
+          className="product-detail-image"
         />
       )}
 
