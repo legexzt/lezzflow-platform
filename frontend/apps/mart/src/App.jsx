@@ -6,6 +6,7 @@ import Login from './pages/Login.jsx';
 import Home from './pages/Home.jsx';
 import NearbyShops from './pages/NearbyShops.jsx';
 import ShopDetail from './pages/ShopDetail.jsx';
+import ProductDetail from './pages/ProductDetail.jsx';
 import Cart from './pages/Cart.jsx';
 import Checkout from './pages/Checkout.jsx';
 import Orders from './pages/Orders.jsx';
@@ -56,6 +57,7 @@ export default function App() {
           <Route path="/" element={<RequireAuth><Home /></RequireAuth>} />
           <Route path="/nearby" element={<RequireAuth><NearbyShops /></RequireAuth>} />
           <Route path="/shop/:id" element={<RequireCustomer><ShopDetail /></RequireCustomer>} />
+          <Route path="/product/:id" element={<RequireCustomer><ProductDetail /></RequireCustomer>} />
           <Route path="/cart" element={<RequireCustomer><Cart /></RequireCustomer>} />
           <Route path="/checkout" element={<RequireCustomer><Checkout /></RequireCustomer>} />
           <Route path="/orders" element={<RequireCustomer><Orders /></RequireCustomer>} />

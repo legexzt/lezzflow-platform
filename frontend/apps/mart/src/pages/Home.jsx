@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import api from '../api';
 import { useCart } from '../CartContext.jsx';
 import Icon from '../components/Icon.jsx';
@@ -23,8 +24,19 @@ function asArray(data, key) {
 
 function ProductCard({ product, shopName, onAdd }) {
   const [imgOk, setImgOk] = useState(Boolean(product.image_url));
+  const navigate = useNavigate();
+  const openDetail = () => navigate(`/product/${product.id}`);
   return (
-    <div className="product-card">
+    <div
+      className="product-card"
+      onClick={openDetail}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') openDetail();
+      }}
+      style={{ cursor: 'pointer' }}
+    >
       {imgOk && (
         <img
           src={product.image_url}
@@ -39,7 +51,14 @@ function ProductCard({ product, shopName, onAdd }) {
         {shopName && <span className="muted small">{shopName}</span>}
         <div className="product-footer">
           <span className="price">{formatPrice(product.price)}</span>
-          <button type="button" className="btn btn-primary btn-sm" onClick={onAdd}>
+          <button
+            type="button"
+            className="btn btn-primary btn-sm"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAdd();
+            }}
+          >
             Add
           </button>
         </div>
