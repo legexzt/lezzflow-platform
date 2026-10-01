@@ -73,7 +73,7 @@ const RULES = [
   { re: /juice|maaza|frooti|tropicana|paper ?boat|pomegranate|\breal\b|b natural|\bslice\b/i, unit: 'ml', rate: 0.12, min: 20, max: 200, fb: 120 },
   { re: /cola|thums ?up|coca|pepsi|sprite|fanta|mirinda|limca|\bsoda\b|soft drink|cold drink/i, unit: 'ml', rate: 0.05, min: 15, max: 150, fb: 40 },
   { re: /syrup|rooh ?afza|squash/i, unit: 'ml', rate: 0.25, min: 50, max: 300, fb: 130 },
-  { re: /bournvita|horlicks|\bmalt\b|protein/i, unit: 'g', rate: 0.5, min: 100, max: 600, fb: 250 },
+  { re: /bourn ?vita|horlicks|\bmalt\b|protein/i, unit: 'g', rate: 0.5, min: 100, max: 600, fb: 250 },
   // dairy (chocolate before milk: "dairy milk" is chocolate)
   { re: /buttermilk|chach|lassi/i, unit: 'ml', rate: 0.04, min: 10, max: 60, fb: 20 },
   { re: /ghee/i, unit: 'g', rate: 0.65, min: 80, max: 700, fb: 330 },
