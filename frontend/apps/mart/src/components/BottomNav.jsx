@@ -3,17 +3,16 @@ import { useCart } from '../CartContext.jsx';
 import Icon from './Icon.jsx';
 
 /**
- * Mobile bottom navigation — Home keeps the shop discovery front and center,
- * secondary features live under More. Desktop keeps using the header nav.
+ * Mobile bottom navigation — Home keeps the grocery discovery front and
+ * center; secondary features live in the header drawer.
  */
 export default function BottomNav() {
   const { count } = useCart();
 
   const items = [
     { to: '/', label: 'Home', icon: 'home', end: true },
-    { to: '/orders', label: 'Orders', icon: 'receipt' },
     { to: '/cart', label: 'Cart', icon: 'cart', badge: count },
-    { to: '/more', label: 'More', icon: 'settings' },
+    { to: '/orders', label: 'My Orders', icon: 'receipt' },
   ];
 
   return (

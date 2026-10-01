@@ -1,292 +1,267 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import api from '../api';
-import ShopMap from '../components/ShopMap.jsx';
-import { formatDistance, cacheCustomerPosition, getCustomerPosition } from '../shopUtils';
+import { useCart } from '../CartContext.jsx';
 import Icon from '../components/Icon.jsx';
+import ScanSheet from '../components/ScanSheet.jsx';
+import { formatPrice } from '../shopUtils';
 
-const DEFAULT_CENTER = [12.9716, 77.5946]; // Bengaluru fallback until GPS resolves
+const AVATAR_COLORS = ['#16a34a', '#2563eb', '#d97706', '#dc2626', '#7c3aed', '#0891b2'];
 
-function ShopCard({ shop }) {
-  const distance = formatDistance(shop);
-  return (
-    <Link to={`/shop/${shop.id}`} className="shop-card">
-      <div className="shop-card-body">
-        <h3>{shop.name}</h3>
-        {shop.address && <p className="muted">{shop.address}</p>}
-        <div className="chip-row">
-          {distance && <span className="chip">{distance} away</span>}
-          {shop.is_open === true && <span className="chip chip-open">Open</span>}
-          {shop.is_open === false && <span className="chip chip-closed">Closed</span>}
-        </div>
-      </div>
-      <span className="shop-card-cta">Browse →</span>
-    </Link>
-  );
+/** Deterministic avatar color from a shop id/name. */
+function avatarColor(key) {
+  const s = String(key ?? '');
+  let h = 0;
+  for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+  return AVATAR_COLORS[h % AVATAR_COLORS.length];
 }
 
-function ShopSection({ title, shops, empty }) {
+function asArray(data, key) {
+  if (Array.isArray(data)) return data;
+  if (data && Array.isArray(data[key])) return data[key];
+  return [];
+}
+
+function ProductCard({ product, shopName, onAdd }) {
+  const [imgOk, setImgOk] = useState(Boolean(product.image_url));
   return (
-    <section className="shop-section">
-      <h2>{title}</h2>
-      {shops.length === 0 ? (
-        <p className="muted">{empty}</p>
-      ) : (
-        <div className="shop-grid">
-          {shops.map((shop) => (
-            <ShopCard key={shop.id} shop={shop} />
-          ))}
-        </div>
+    <div className="product-card">
+      {imgOk && (
+        <img
+          src={product.image_url}
+          alt={product.name}
+          className="product-image"
+          loading="lazy"
+          onError={() => setImgOk(false)}
+        />
       )}
-    </section>
+      <div className="product-body">
+        <h3>{product.name}</h3>
+        {shopName && <span className="muted small">{shopName}</span>}
+        <div className="product-footer">
+          <span className="price">{formatPrice(product.price)}</span>
+          <button type="button" className="btn btn-primary btn-sm" onClick={onAdd}>
+            Add
+          </button>
+        </div>
+      </div>
+    </div>
   );
 }
 
 export default function Home() {
-  const navigate = useNavigate();
-  const [position, setPosition] = useState(null);
-  const [locating, setLocating] = useState(false);
-  const [locationError, setLocationError] = useState('');
-  const [showManualLocation, setShowManualLocation] = useState(false);
-  const [manualLat, setManualLat] = useState('');
-  const [manualLng, setManualLng] = useState('');
-  const [manualError, setManualError] = useState('');
-  const [layers, setLayers] = useState({ within5km: [], within10km: [], within20km: [] });
-  const [launchGate, setLaunchGate] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const { addItem } = useCart();
+  const [products, setProducts] = useState([]);
+  const [shops, setShops] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [query, setQuery] = useState('');
+  const [category, setCategory] = useState('All');
+  const [shopFilter, setShopFilter] = useState(null); // shop id, or null = all shops
+  const [scanning, setScanning] = useState(false);
+  const [scanError, setScanError] = useState('');
+  const [scanItems, setScanItems] = useState(null); // null = sheet closed
+  const fileRef = useRef(null);
 
-  const fetchDiscovery = useCallback(async (lat, lng) => {
+  // Blinkit-style grocery home: products + shops up front, no map.
+  // Map-based discovery lives on at /nearby.
+  useEffect(() => {
+    let mounted = true;
     setLoading(true);
     setError('');
-    try {
-      const res = await api.get('/api/discover', { params: { lat, lng } });
-      setLayers({
-        within5km: res.data?.within5km || [],
-        within10km: res.data?.within10km || [],
-        within20km: res.data?.within20km || [],
+    Promise.all([
+      api.get('/api/products', { params: { limit: 100 } }),
+      api.get('/api/shops'),
+    ])
+      .then(([prodRes, shopRes]) => {
+        if (!mounted) return;
+        setProducts(asArray(prodRes.data, 'products'));
+        setShops(asArray(shopRes.data, 'shops'));
+      })
+      .catch((e) => {
+        if (mounted) {
+          setError(e.response?.data?.error || 'Could not load products. Please try again.');
+        }
+      })
+      .finally(() => {
+        if (mounted) setLoading(false);
       });
-      setLaunchGate(res.data?.launch_gate || null);
-    } catch (e) {
-      setError(e.response?.data?.error || 'Could not load nearby shops. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    return () => {
+      mounted = false;
+    };
   }, []);
 
-  const locate = useCallback(() => {
-    if (!('geolocation' in navigator)) {
-      setLocationError('Geolocation is not supported by this browser.');
-      setShowManualLocation(true);
-      return;
-    }
-    setLocating(true);
-    setLocationError('');
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const coords = [pos.coords.latitude, pos.coords.longitude];
-        setPosition(coords);
-        setLocating(false);
-        cacheCustomerPosition(coords[0], coords[1]);
-        fetchDiscovery(coords[0], coords[1]);
-      },
-      (err) => {
-        setLocating(false);
-        setLocationError(
-          err.code === err.PERMISSION_DENIED
-            ? 'Location permission denied. Allow location access to discover nearby shops.'
-            : 'Unable to get your location. Please try again.'
-        );
-        setShowManualLocation(true);
-      },
-      { enableHighAccuracy: true, timeout: 10000 }
-    );
-  }, [fetchDiscovery]);
+  const shopNames = useMemo(() => {
+    const map = new Map();
+    for (const shop of shops) map.set(String(shop.id), shop.name);
+    return map;
+  }, [shops]);
 
-  // Try cached position first (survives reloads); fall back to live GPS.
-  useEffect(() => {
-    let cancelled = false;
-    getCustomerPosition().then((pos) => {
-      if (cancelled) return;
-      if (pos && Number.isFinite(pos.lat) && Number.isFinite(pos.lng)) {
-        setPosition([pos.lat, pos.lng]);
-        fetchDiscovery(pos.lat, pos.lng);
-      } else {
-        locate();
-      }
+  // 'All' first, then each distinct category in first-seen order.
+  const categories = useMemo(() => {
+    const seen = [];
+    for (const p of products) {
+      if (p.category && !seen.includes(p.category)) seen.push(p.category);
+    }
+    return ['All', ...seen];
+  }, [products]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products.filter((p) => {
+      if (q && !(p.name || '').toLowerCase().includes(q)) return false;
+      if (category !== 'All' && p.category !== category) return false;
+      if (shopFilter !== null && String(p.shop_id) !== String(shopFilter)) return false;
+      return true;
     });
-    return () => {
-      cancelled = true;
-    };
-  }, [locate, fetchDiscovery]);
+  }, [products, query, category, shopFilter]);
 
-  const applyManualLocation = useCallback(
-    (lat, lng) => {
-      const coords = [lat, lng];
-      setPosition(coords);
-      setLocationError('');
-      setManualError('');
-      setShowManualLocation(false);
-      cacheCustomerPosition(lat, lng);
-      fetchDiscovery(lat, lng);
-    },
-    [fetchDiscovery]
-  );
-
-  const handleManualSubmit = useCallback(() => {
-    const lat = parseFloat(manualLat);
-    const lng = parseFloat(manualLng);
-    if (
-      Number.isNaN(lat) ||
-      Number.isNaN(lng) ||
-      lat < -90 ||
-      lat > 90 ||
-      lng < -180 ||
-      lng > 180
-    ) {
-      setManualError('Enter a valid latitude (-90 to 90) and longitude (-180 to 180).');
-      return;
+  const sections = useMemo(() => {
+    const groups = new Map();
+    for (const p of filtered) {
+      const cat = p.category || 'Other';
+      if (!groups.has(cat)) groups.set(cat, []);
+      groups.get(cat).push(p);
     }
-    applyManualLocation(lat, lng);
-  }, [manualLat, manualLng, applyManualLocation]);
+    return [...groups.entries()];
+  }, [filtered]);
 
-  // De-dupe layers: a shop within 5 km also appears in the 10/20 km payloads.
-  const groups = useMemo(() => {
-    const in5 = layers.within5km;
-    const ids5 = new Set(in5.map((s) => s.id));
-    const in10 = layers.within10km.filter((s) => !ids5.has(s.id));
-    const ids10 = new Set(in10.map((s) => s.id));
-    const in20 = layers.within20km.filter((s) => !ids5.has(s.id) && !ids10.has(s.id));
-    return { in5, in10, in20 };
-  }, [layers]);
-
-  const allShops = useMemo(
-    () => [...groups.in5, ...groups.in10, ...groups.in20],
-    [groups]
-  );
-
-  const handleSelectShop = useCallback(
-    (shop) => {
-      if (shop?.id) navigate(`/shop/${shop.id}`);
-    },
-    [navigate]
-  );
+  /** Photo of a handwritten list → server scan → review sheet. */
+  const handleScanFile = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // allow picking the same photo again
+    if (!file) return;
+    setScanning(true);
+    setScanError('');
+    try {
+      const form = new FormData();
+      form.append('image', file);
+      const res = await api.post('/api/scan/list', form, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      setScanItems(asArray(res.data, 'items'));
+    } catch (err) {
+      setScanError(
+        err.response?.data?.error || 'Could not scan that photo. Please try again.'
+      );
+    } finally {
+      setScanning(false);
+    }
+  };
 
   return (
     <div className="page">
-      <div className="page-header">
-        <h1>Shops near you</h1>
-        <div className="header-actions">
-          <button
-            type="button"
-            className="btn btn-outline"
-            onClick={() => {
-              setManualError('');
-              setShowManualLocation((v) => !v);
-            }}
-          >
-            {showManualLocation ? 'Cancel manual location' : 'Set location manually'}
-          </button>
-          <button
-            type="button"
-            className="btn btn-primary"
-            onClick={locate}
-            disabled={locating}
-          >
-            {locating ? 'Locating…' : (<><Icon name="location" size={16} /> Use my location</>)}
-          </button>
-        </div>
+      <div className="search-bar">
+        <input
+          type="text"
+          className="input search-input"
+          placeholder="Search for atta, milk, rice…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        <button
+          type="button"
+          className="search-cam-btn"
+          onClick={() => fileRef.current?.click()}
+          disabled={scanning}
+          aria-label="Scan a shopping list photo"
+        >
+          {scanning ? (
+            <span className="spinner spinner-sm" />
+          ) : (
+            <Icon name="camera" size={20} />
+          )}
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          style={{ display: 'none' }}
+          onChange={handleScanFile}
+        />
       </div>
 
-      {locationError && <div className="banner banner-error">{locationError}</div>}
+      {scanError && <div className="banner banner-error">{scanError}</div>}
       {error && <div className="banner banner-error">{error}</div>}
 
-      {/* Cluster launch gate (GTM cycle-3): below 25 live shops the area is
-          honestly shown as "coming soon" — never a thin, disappointing list. */}
-      {launchGate && !launchGate.ready && (
-        <div className="banner banner-info launch-gate">
-          <Icon name="location" size={18} />
-          <div>
-            <strong>Jald aa rahe hain!</strong>
-            <p className="muted small">
-              {launchGate.live_shops_10km} of {launchGate.threshold} shops live near you —
-              we launch this area once {launchGate.threshold} shops are live.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {showManualLocation && (
-        <div className="manual-location">
-          <p className="muted">
-            Enter your coordinates manually, or start from the city default:
-          </p>
-          <div className="manual-location-row">
-            <input
-              type="number"
-              step="any"
-              placeholder="Latitude (e.g. 12.9716)"
-              value={manualLat}
-              onChange={(e) => setManualLat(e.target.value)}
-            />
-            <input
-              type="number"
-              step="any"
-              placeholder="Longitude (e.g. 77.5946)"
-              value={manualLng}
-              onChange={(e) => setManualLng(e.target.value)}
-            />
+      {categories.length > 1 && (
+        <div className="chip-row-scroll">
+          {categories.map((c) => (
             <button
+              key={c}
               type="button"
-              className="btn btn-primary"
-              onClick={handleManualSubmit}
+              className={`cat-chip${category === c ? ' active' : ''}`}
+              onClick={() => setCategory(c)}
             >
-              Use this location
+              {c}
             </button>
-          </div>
-          <button
-            type="button"
-            className="btn btn-outline btn-sm"
-            onClick={() => applyManualLocation(DEFAULT_CENTER[0], DEFAULT_CENTER[1])}
-          >
-            Use Bengaluru city center
-          </button>
-          {manualError && <div className="banner banner-error">{manualError}</div>}
+          ))}
         </div>
       )}
 
-      <ShopMap
-        center={position || DEFAULT_CENTER}
-        shops={allShops}
-        onSelectShop={handleSelectShop}
-      />
+      <section className="shop-avatar-section">
+        <h2>Shops near you</h2>
+        {shops.length === 0 && !loading ? (
+          <p className="muted">No shops yet.</p>
+        ) : (
+          <div className="shop-avatar-row">
+            {shops.map((shop) => (
+              <button
+                key={shop.id}
+                type="button"
+                className={`shop-avatar${shopFilter === shop.id ? ' active' : ''}`}
+                onClick={() => setShopFilter(shopFilter === shop.id ? null : shop.id)}
+              >
+                <span
+                  className="shop-avatar-circle"
+                  style={{ background: avatarColor(shop.id ?? shop.name) }}
+                >
+                  {(shop.name || '?').trim().charAt(0).toUpperCase()}
+                </span>
+                <span className="shop-avatar-name">{shop.name}</span>
+              </button>
+            ))}
+          </div>
+        )}
+        {shopFilter !== null && (
+          <button type="button" className="filter-chip" onClick={() => setShopFilter(null)}>
+            Shop: {shopNames.get(String(shopFilter)) || 'Selected'}
+            <Icon name="close" size={12} />
+          </button>
+        )}
+      </section>
 
-      {!position && !locating && !showManualLocation && (
-        <p className="muted">
-          Tap &quot;Use my location&quot; or &quot;Set location manually&quot; to discover
-          kirana shops delivering around you.
-        </p>
+      {loading ? (
+        <div className="center-screen">
+          <div className="spinner" />
+          <p>Loading…</p>
+        </div>
+      ) : sections.length === 0 && !error ? (
+        <div className="empty-state">
+          <p>No products found.</p>
+        </div>
+      ) : (
+        sections.map(([cat, prods]) => (
+          <section key={cat} className="product-section">
+            <h2>{cat}</h2>
+            <div className="product-row-scroll">
+              {prods.map((p) => (
+                <ProductCard
+                  key={p.id}
+                  product={p}
+                  shopName={shopNames.get(String(p.shop_id))}
+                  onAdd={() =>
+                    addItem(p, { id: p.shop_id, name: shopNames.get(String(p.shop_id)) })
+                  }
+                />
+              ))}
+            </div>
+          </section>
+        ))
       )}
-      {loading && <p className="muted">Finding shops…</p>}
 
-      {position && !loading && (
-        <>
-          <ShopSection
-            title="Within 5 km"
-            shops={groups.in5}
-            empty="No shops within 5 km yet."
-          />
-          <ShopSection
-            title="Within 10 km"
-            shops={groups.in10}
-            empty="No more shops between 5–10 km."
-          />
-          <ShopSection
-            title="Within 20 km"
-            shops={groups.in20}
-            empty="No more shops between 10–20 km."
-          />
-        </>
+      {scanItems !== null && (
+        <ScanSheet items={scanItems} onClose={() => setScanItems(null)} />
       )}
     </div>
   );

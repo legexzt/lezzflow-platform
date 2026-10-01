@@ -1204,3 +1204,344 @@ h3 {
   align-items: center;
   gap: 0.5rem;
 }
+
+/* ---- Blinkit-style grocery home + header drawer + scan sheet ---- */
+
+/* Header: hamburger left, brand truly centered, bell right. Header sits
+   above the bottom nav so the drawer overlay dims it too. */
+.app-header {
+  z-index: 1300;
+}
+
+.header-inner {
+  position: relative;
+}
+
+.header-inner .brand {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.header-menu-btn {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gray-700);
+}
+
+.header-menu-btn:hover {
+  background: var(--gray-100);
+}
+
+.header-spacer {
+  width: 38px;
+}
+
+/* Drawer */
+.drawer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1310;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 260px;
+  max-width: 80vw;
+  background: #fff;
+  z-index: 1311;
+  box-shadow: 2px 0 12px rgba(0, 0, 0, 0.15);
+  padding: 0.75rem 0;
+  animation: drawer-in 0.18s ease-out;
+}
+
+@keyframes drawer-in {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+.drawer-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.85rem 1.25rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--gray-700);
+  text-decoration: none;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.drawer-row:hover {
+  background: var(--gray-50);
+  color: var(--green-700);
+}
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.search-input {
+  flex: 1;
+}
+
+.search-cam-btn {
+  flex: none;
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--gray-300);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--gray-700);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.search-cam-btn:hover:not(:disabled) {
+  border-color: var(--green-600);
+  color: var(--green-700);
+}
+
+.search-cam-btn:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.spinner-sm {
+  width: 18px;
+  height: 18px;
+  border-width: 2px;
+}
+
+.small {
+  font-size: 0.78rem;
+}
+
+/* Category chips — horizontally scrollable */
+.chip-row-scroll {
+  display: flex;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.5rem;
+  scrollbar-width: none;
+}
+
+.chip-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.cat-chip {
+  flex: none;
+  border: 1px solid var(--gray-300);
+  background: #fff;
+  color: var(--gray-700);
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.35rem 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.cat-chip.active {
+  background: var(--green-600);
+  border-color: var(--green-600);
+  color: #fff;
+}
+
+/* Shop avatars */
+.shop-avatar-section {
+  margin: 0.5rem 0;
+}
+
+.shop-avatar-row {
+  display: flex;
+  gap: 0.9rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.5rem;
+  scrollbar-width: none;
+}
+
+.shop-avatar-row::-webkit-scrollbar {
+  display: none;
+}
+
+.shop-avatar {
+  flex: none;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.shop-avatar-circle {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 1.2rem;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid transparent;
+}
+
+.shop-avatar.active .shop-avatar-circle {
+  border-color: var(--green-600);
+  box-shadow: 0 0 0 2px var(--green-100);
+}
+
+.shop-avatar-name {
+  font-size: 0.68rem;
+  color: var(--gray-700);
+  max-width: 64px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  background: var(--green-50);
+  border: 1px solid var(--green-200);
+  color: var(--green-700);
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  padding: 0.3rem 0.75rem;
+  cursor: pointer;
+  margin-top: 0.25rem;
+}
+
+/* Product sections — horizontal card rows */
+.product-section {
+  margin-top: 0.5rem;
+}
+
+.product-row-scroll {
+  display: flex;
+  gap: 0.75rem;
+  overflow-x: auto;
+  padding: 0.25rem 0 0.75rem;
+  scrollbar-width: none;
+}
+
+.product-row-scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.product-row-scroll .product-card {
+  flex: none;
+  width: 150px;
+}
+
+.product-row-scroll .product-card h3 {
+  font-size: 0.85rem;
+}
+
+.product-row-scroll .product-image {
+  height: 90px;
+}
+
+/* Scan sheet */
+.scan-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 1400;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.scan-sheet {
+  background: #fff;
+  width: 100%;
+  max-width: 560px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-radius: 16px 16px 0 0;
+  padding: 1rem 1.25rem calc(1.25rem + env(safe-area-inset-bottom));
+  animation: sheet-up 0.2s ease-out;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.scan-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.scan-list {
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.scan-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border: 1px solid var(--gray-100);
+  border-radius: var(--radius);
+  padding: 0.6rem 0.75rem;
+}
+
+.scan-row input[type='checkbox'] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--green-600);
+  flex: none;
+}
+
+.scan-row-info {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
