@@ -14,9 +14,10 @@ export default function Header() {
         <div className="brand">
           {logoOk ? (
             <img
-              src="/logo.svg"
+              src="/brand-banner.png"
               alt="LezzFlow"
               className="brand-logo"
+              style={{ height: '38px', width: 'auto' }}
               onError={() => setLogoOk(false)}
             />
           ) : (
