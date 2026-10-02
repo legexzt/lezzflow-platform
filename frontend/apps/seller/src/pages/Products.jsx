@@ -9,6 +9,12 @@ import { setProductStock } from '../helpers/setProductStock.js'
 
 import { useAuth } from '../AuthContext.jsx'
 
+const STOCK_STATUS = {
+  in_stock: { badge: 'badge-green', icon: 'check', label: 'In stock' },
+  low_stock: { badge: 'badge-blue', icon: 'warning', label: 'Low stock' },
+  out_of_stock: { badge: 'badge-grey', icon: 'warning', label: 'Out of stock' },
+}
+
 export default function Products() {
   const toast = useToast()
   const { t } = useLang()
@@ -122,6 +128,8 @@ export default function Products() {
           {products.map((p) => {
             const hasStock = Number(p.stock) > 0
             const isToggling = togglingId === p.id
+            const stockMeta =
+              STOCK_STATUS[p.stock_status] || STOCK_STATUS[hasStock ? 'in_stock' : 'out_of_stock']
             return (
               <li key={p.id} className="card product-card">
                 <div className="product-thumb">
@@ -144,9 +152,9 @@ export default function Products() {
                     )}
                   </p>
                   <div className="toggle-row">
-                    <span className={`badge ${hasStock ? 'badge-green' : 'badge-grey'}`}>
-                      <Icon name={hasStock ? 'check' : 'warning'} size={12} />
-                      {hasStock ? 'In stock' : 'Out of stock'}
+                    <span className={`badge ${stockMeta.badge}`}>
+                      <Icon name={stockMeta.icon} size={12} />
+                      {stockMeta.label}
                     </span>
                     {hasStock ? (
                       <button

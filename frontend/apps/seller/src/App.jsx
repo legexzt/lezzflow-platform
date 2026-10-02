@@ -17,6 +17,7 @@ import Money from './pages/Money.jsx'
 import More from './pages/More.jsx'
 import Notifications from './pages/Notifications.jsx'
 import Onboarding from './pages/Onboarding.jsx'
+import ScanPack from './pages/ScanPack.jsx'
 
 export default function App() {
   const { firebaseUser } = useAuth()
@@ -38,6 +39,7 @@ export default function App() {
             <Route path="/products/new" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
             <Route path="/products/:id/edit" element={<ProtectedRoute><ProductForm /></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/scan" element={<ProtectedRoute><ScanPack /></ProtectedRoute>} />
             <Route path="/offers" element={<ProtectedRoute><Offers /></ProtectedRoute>} />
             <Route path="/advisory" element={<ProtectedRoute><Advisory /></ProtectedRoute>} />
             <Route path="/money" element={<ProtectedRoute><Money /></ProtectedRoute>} />

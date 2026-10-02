@@ -11,6 +11,11 @@ import PackingSlip from '../components/PackingSlip.jsx'
 const NEXT_STATUS = { placed: 'accepted', accepted: 'packed' }
 const NEXT_ACTION = { placed: 'Accept order', accepted: 'Mark packed' }
 const FILTERS = ['all', 'placed', 'accepted', 'packed', 'cancelled']
+const STATUS_LABEL = { packed: 'Ready to Pack' }
+
+function statusLabel(s) {
+  return STATUS_LABEL[s] || s
+}
 
 function toDate(v) {
   if (!v) return null
@@ -83,7 +88,7 @@ export default function Orders() {
     try {
       await api.patch(`/orders/${order.id}/status`, { status: next })
       setOrders((list) => list.map((o) => (o.id === order.id ? { ...o, status: next } : o)))
-      toast(next === 'accepted' ? 'Order accepted' : 'Order marked as packed', 'success')
+      toast(next === 'accepted' ? 'Order accepted' : 'Order marked Ready to Pack', 'success')
     } catch (err) {
       toast(getErrorMessage(err), 'error')
     } finally {
@@ -140,7 +145,7 @@ export default function Orders() {
             className={`chip ${filter === f ? 'active' : ''}`}
             onClick={() => setFilter(f)}
           >
-            {f === 'all' ? 'All' : f.charAt(0).toUpperCase() + f.slice(1)}
+            {f === 'all' ? 'All' : STATUS_LABEL[f] || f.charAt(0).toUpperCase() + f.slice(1)}
           </button>
         ))}
       </div>
@@ -148,7 +153,7 @@ export default function Orders() {
       {visible.length === 0 ? (
         <div className="card empty-card">
           <p className="empty-icon"><Icon name="receipt" size={40} /></p>
-          <p>{filter === 'all' ? 'No orders yet.' : `No ${filter} orders.`}</p>
+          <p>{filter === 'all' ? 'No orders yet.' : `No ${statusLabel(filter).toLowerCase()} orders.`}</p>
           <p className="muted">New orders from customers will appear here.</p>
         </div>
       ) : (
@@ -174,7 +179,7 @@ export default function Orders() {
                       <Icon name={o.fulfillment === 'delivery' ? 'scooter' : 'runner'} size={14} />
                       {o.fulfillment === 'delivery' ? ' Delivery' : ' Pickup'}
                     </span>
-                    <span className={`badge status-${o.status}`}>{o.status}</span>
+                    <span className={`badge status-${o.status}`}>{statusLabel(o.status)}</span>
                   </div>
                 </div>
 
@@ -225,7 +230,7 @@ export default function Orders() {
                   ) : o.status === 'cancelled' ? (
                     <span className="badge badge-grey"><Icon name="close" size={14} /> Cancelled</span>
                   ) : (
-                    <span className="badge badge-green"><Icon name="check" size={14} /> Packed</span>
+                    <span className="badge badge-green"><Icon name="check" size={14} /> Ready to Pack</span>
                   )}
                 </div>
 
