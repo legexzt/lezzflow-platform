@@ -194,7 +194,7 @@ export default function ScanPack() {
     return (
       <div className="page">
         <div className="page-head">
-          <h1 className="page-title">Scan & Pack</h1>
+          <h1 className="page-title">Scan &amp; Pack</h1>
           <button type="button" className="btn btn-outline btn-sm" onClick={load}>
             Refresh
           </button>
@@ -291,7 +291,7 @@ export default function ScanPack() {
         <button type="button" className="btn btn-ghost btn-sm" onClick={backToOrders}>
           Back
         </button>
-        <h1 className="page-title">Scan & Pack</h1>
+        <h1 className="page-title">Scan &amp; Pack</h1>
       </div>
 
       <div className="card">
