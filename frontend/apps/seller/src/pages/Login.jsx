@@ -4,6 +4,11 @@ import { signInWithGoogle } from '../firebase.js'
 import { useAuth } from '../AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
+import './Login.css'
+
+// TEMPORARY demo access for the owner — remove before public launch.
+const DEMO_EMAIL = 'seller.demo@legezt.in'
+const DEMO_PASSWORD = 'LezzTemp#2026'
 
 function GoogleIcon() {
   return (
@@ -30,15 +35,67 @@ function emailAuthMessage(code, message) {
   return message || 'Sign-in failed. Please try again.'
 }
 
+function FeatureIcon({ children }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {children}
+    </svg>
+  )
+}
+
+const HERO_FEATURES = [
+  {
+    label: 'Manage Products',
+    icon: (
+      <FeatureIcon>
+        <path d="M21 8l-9-5-9 5v8l9 5 9-5V8z" />
+        <path d="M3 8l9 5 9-5" />
+        <path d="M12 13v8" />
+      </FeatureIcon>
+    ),
+  },
+  {
+    label: 'Track Orders',
+    icon: (
+      <FeatureIcon>
+        <rect x="5" y="4" width="14" height="16" rx="2" />
+        <path d="M9 9h6" />
+        <path d="M9 13h6" />
+        <path d="M9 17h4" />
+      </FeatureIcon>
+    ),
+  },
+  {
+    label: 'Grow Your Sales',
+    icon: (
+      <FeatureIcon>
+        <path d="M3 17l6-6 4 4 8-8" />
+        <path d="M15 7h6v6" />
+      </FeatureIcon>
+    ),
+  },
+]
+
 export default function Login() {
   const { firebaseUser, loading } = useAuth()
   const toast = useToast()
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [logoOk, setLogoOk] = useState(true)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(DEMO_EMAIL)
   const [password, setPassword] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
+  const [remember, setRemember] = useState(true)
 
   if (loading) return <Loading full />
   if (firebaseUser) return <Navigate to="/" replace />
@@ -72,54 +129,122 @@ export default function Login() {
     }
   }
 
+  async function handleDemoLogin() {
+    setEmailBusy(true)
+    try {
+      const { signInWithEmailAndPassword } = await import('firebase/auth')
+      const { auth } = await import('../firebase.js')
+      await signInWithEmailAndPassword(auth, DEMO_EMAIL, DEMO_PASSWORD)
+      navigate('/', { replace: true })
+    } catch (err) {
+      toast(emailAuthMessage(err?.code, err?.message), 'error')
+    } finally {
+      setEmailBusy(false)
+    }
+  }
+
+  function handleForgotPassword() {
+    toast('Please contact your admin to reset your password.', 'info')
+  }
+
   return (
-    <div className="login-page">
-      <div className="card login-card">
-        {logoOk ? (
-          <img
-            src="/logo-dark.png"
-            alt="LezzFlow"
-            className="login-logo"
-            onError={() => setLogoOk(false)}
-          />
-        ) : (
-          <div className="login-word">LezzFlow</div>
-        )}
-        <span className="brand-badge">Seller App</span>
-        <p className="muted login-sub">
-          Sell to customers near you. Manage your shop, products and orders — all in one place.
-        </p>
-        <button type="button" className="google-btn" onClick={handleLogin} disabled={busy}>
-          <GoogleIcon />
-          {busy ? 'Signing in…' : 'Continue with Google'}
-        </button>
-        <div className="login-divider">
-          <span>Sign in with email</span>
+    <div className="login-page login-redesign">
+      <section className="login-hero">
+        <div className="login-hero-content">
+          <h1 className="login-hero-title">
+            <span className="login-hero-title-mobile">Your Local Shops Now Online</span>
+            <span className="login-hero-title-desktop">Grow Your Local Business with LezzFlow</span>
+          </h1>
+          <p className="login-hero-sub">
+            Sell to customers near you. Manage your shop, products and orders — all in one place.
+          </p>
+          <ul className="login-hero-features">
+            {HERO_FEATURES.map((feature) => (
+              <li key={feature.label}>
+                <span className="login-feature-icon">{feature.icon}</span>
+                {feature.label}
+              </li>
+            ))}
+          </ul>
         </div>
-        <form className="email-auth-form" onSubmit={handleEmailLogin} noValidate>
-          <input
-            type="email"
-            className="input"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            autoComplete="email"
-          />
-          <input
-            type="password"
-            className="input"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            autoComplete="current-password"
-          />
-          <button type="submit" className="btn btn-secondary btn-block" disabled={emailBusy}>
-            {emailBusy ? 'Signing in…' : 'Sign in'}
+      </section>
+
+      <main className="login-panel">
+        <div className="login-card">
+          {logoOk ? (
+            <img
+              src="/brand-logo.png"
+              alt="LezzFlow"
+              className="login-logo"
+              onError={() => setLogoOk(false)}
+            />
+          ) : (
+            <div className="login-word">LezzFlow</div>
+          )}
+          <span className="brand-badge">Seller App</span>
+          <h2 className="login-title">Welcome Back!</h2>
+          <p className="login-sub">Login to manage your shop, products and orders.</p>
+
+          <button type="button" className="google-btn" onClick={handleLogin} disabled={busy}>
+            <GoogleIcon />
+            {busy ? 'Signing in…' : 'Continue with Google'}
           </button>
-        </form>
-      </div>
+
+          <div className="login-divider">
+            <span>or sign in with email</span>
+          </div>
+
+          <form className="email-auth-form" onSubmit={handleEmailLogin} noValidate>
+            <input
+              type="email"
+              className="input"
+              placeholder="Email address"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+            />
+            <input
+              type="password"
+              className="input"
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              autoComplete="current-password"
+            />
+            <button type="submit" className="login-submit" disabled={emailBusy}>
+              {emailBusy ? 'Signing in…' : 'Sign In →'}
+            </button>
+            <div className="login-form-row">
+              <label className="login-remember">
+                <input
+                  type="checkbox"
+                  checked={remember}
+                  onChange={(e) => setRemember(e.target.checked)}
+                />
+                Remember me
+              </label>
+              <button type="button" className="login-link" onClick={handleForgotPassword}>
+                Forgot password?
+              </button>
+            </div>
+          </form>
+
+          <button
+            type="button"
+            className="login-demo-btn"
+            onClick={handleDemoLogin}
+            disabled={emailBusy}
+          >
+            {emailBusy ? 'Signing in…' : 'Demo Login (temporary)'}
+          </button>
+
+          <p className="login-footer">
+            Don't have an account? <strong>Contact Admin</strong>
+          </p>
+        </div>
+      </main>
     </div>
   )
 }
