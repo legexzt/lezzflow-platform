@@ -33,7 +33,7 @@ body {
 }
 
 body {
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, sans-serif;
   background: var(--bg);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
@@ -93,9 +93,11 @@ img {
 }
 
 .brand-logo {
-  height: 32px;
-  width: auto;
+  width: 30px;
+  height: 30px;
+  border-radius: 8px;
   display: block;
+  flex-shrink: 0;
 }
 
 .brand-word {
@@ -103,6 +105,7 @@ img {
   font-size: 22px;
   color: var(--ink);
   letter-spacing: -0.02em;
+  line-height: 1;
 }
 .brand-word span { color: var(--brand-dark); }
 
@@ -121,12 +124,24 @@ img {
 .header-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  min-width: 0;
 }
 
 .header-user {
   font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (max-width: 479px) {
+  .header-user {
+    display: none;
+  }
 }
 
 /* ---------- Layout ---------- */
@@ -141,11 +156,11 @@ img {
 .page {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 16px;
 }
 
 .page-title {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 800;
   margin: 4px 0 0;
   letter-spacing: -0.02em;
@@ -229,6 +244,7 @@ img {
   border: 1px solid transparent;
   border-radius: 12px;
   padding: 10px 16px;
+  min-height: 44px;
   font-weight: 600;
   font-size: 15px;
   user-select: none;
@@ -282,6 +298,7 @@ img {
 
 .btn-sm {
   padding: 7px 12px;
+  min-height: 0;
   font-size: 13.5px;
   border-radius: 10px;
 }
@@ -483,15 +500,33 @@ textarea {
 
 .stat-card {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   text-align: center;
-  padding: 18px 12px;
+  padding: 20px 12px;
+  transition: transform 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+}
+
+a.stat-card:hover {
+  border-color: var(--brand-dark);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
 }
 
 .stat-num {
-  font-size: 26px;
+  font-size: 30px;
   font-weight: 800;
   color: var(--green-dark);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.stat-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--muted);
 }
 
 .money-hero {
@@ -506,6 +541,10 @@ textarea {
 .quick-actions {
   display: grid;
   gap: 10px;
+}
+
+.quick-actions .btn {
+  min-height: 48px;
 }
 
 .shop-card {
@@ -756,6 +795,8 @@ textarea {
   -webkit-backdrop-filter: blur(10px);
   border-top: 1px solid var(--line);
   padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 
 .bottom-nav-inner {
@@ -763,7 +804,9 @@ textarea {
   margin: 0 auto;
   height: var(--tabbar-h);
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  /* 6 columns — must match the 6 nav items in BottomNav.jsx, otherwise the
+     last item (settings gear) wraps onto a second row and overlaps content */
+  grid-template-columns: repeat(6, 1fr);
 }
 
 .nav-item {

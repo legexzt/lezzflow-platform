@@ -163,11 +163,11 @@ export default function Dashboard() {
       <div className="stat-grid">
         <Link to="/products" className="card stat-card">
           <span className="stat-num">{counts.products}</span>
-          <span className="muted">Products</span>
+          <span className="stat-label">Products</span>
         </Link>
         <Link to="/orders" className="card stat-card">
           <span className="stat-num">{counts.orders}</span>
-          <span className="muted">Orders</span>
+          <span className="stat-label">Orders</span>
         </Link>
       </div>
 
