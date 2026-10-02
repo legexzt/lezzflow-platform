@@ -1,0 +1,437 @@
+/*
+ * Login page redesign (mobile-first).
+ * Everything is scoped under .login-redesign so these rules outrank the
+ * legacy global login styles regardless of stylesheet load order.
+ */
+
+.login-page.login-redesign {
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  background: #faf6ec;
+  color: #1f1b16;
+  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* ---------- Brand hero ---------- */
+
+.login-redesign .login-hero {
+  position: relative;
+  overflow: hidden;
+  background: #f8cb46;
+  padding: 2.5rem 1.5rem 4.75rem;
+}
+
+.login-redesign .login-hero::after {
+  content: '';
+  position: absolute;
+  right: -56px;
+  bottom: -32px;
+  width: 240px;
+  height: 240px;
+  background: url('/hero-shop.png') center / contain no-repeat;
+  opacity: 0.28;
+  pointer-events: none;
+}
+
+.login-redesign .login-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 20rem;
+}
+
+.login-redesign .login-hero-title {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.7rem, 7vw, 2.1rem);
+  line-height: 1.14;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1f1b16;
+}
+
+.login-redesign .login-hero-title-desktop {
+  display: none;
+}
+
+.login-redesign .login-hero-sub {
+  margin: 0 0 1.5rem;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: rgba(31, 27, 22, 0.75);
+}
+
+.login-redesign .login-hero-features {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.login-redesign .login-hero-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1f1b16;
+}
+
+.login-redesign .login-feature-icon {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 9999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.55);
+  box-shadow: 0 2px 6px -2px rgba(31, 27, 22, 0.2);
+  color: #1f1b16;
+}
+
+/* ---------- Login panel & card ---------- */
+
+.login-redesign .login-panel {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 0 1rem 2.5rem;
+}
+
+.login-redesign .login-card {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 26rem;
+  margin-top: -2.75rem;
+  background: #ffffff;
+  border: none;
+  border-radius: 24px;
+  box-shadow:
+    0 20px 45px -18px rgba(31, 27, 22, 0.28),
+    0 4px 14px -6px rgba(31, 27, 22, 0.08);
+  padding: 1.75rem 1.5rem 1.5rem;
+  text-align: center;
+}
+
+.login-redesign .login-logo {
+  display: block;
+  width: 60px;
+  height: 60px;
+  margin: 0 auto 0.85rem;
+  border-radius: 16px;
+  object-fit: cover;
+  box-shadow: 0 8px 18px -8px rgba(31, 27, 22, 0.45);
+}
+
+.login-redesign .login-word {
+  margin: 0 0 0.5rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1f1b16;
+}
+
+.login-redesign .brand-badge {
+  display: inline-block;
+  margin: 0 0 1rem;
+  padding: 0.3rem 0.75rem;
+  border-radius: 9999px;
+  border: 1px solid #f1dc93;
+  background: #fdf1c7;
+  color: #8a6d1d;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.login-redesign .login-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: #1f1b16;
+}
+
+.login-redesign .login-sub {
+  margin: 0 auto 1.5rem;
+  max-width: 19rem;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #6b6255;
+}
+
+/* ---------- Buttons ---------- */
+
+.login-redesign .google-btn {
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #e6e0d2;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #1f1b16;
+  font-family: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.login-redesign .google-btn:hover:not(:disabled) {
+  border-color: #cfc7b4;
+  background: #fdfcf8;
+  box-shadow: 0 6px 16px -8px rgba(31, 27, 22, 0.25);
+}
+
+.login-redesign .google-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.login-redesign .login-submit {
+  width: 100%;
+  padding: 0.9rem 1rem;
+  border: none;
+  border-radius: 14px;
+  background: #f8cb46;
+  color: #1f1b16;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px -12px rgba(206, 158, 16, 0.6);
+  transition: background 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
+}
+
+.login-redesign .login-submit:hover:not(:disabled) {
+  background: #fad251;
+  box-shadow: 0 14px 26px -12px rgba(206, 158, 16, 0.7);
+}
+
+.login-redesign .login-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.login-redesign .login-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.login-redesign .login-demo-btn {
+  width: 100%;
+  margin-top: 0.9rem;
+  padding: 0.75rem 1rem;
+  border: 1.5px dashed #e0cf9a;
+  border-radius: 14px;
+  background: #fffaf0;
+  color: #8a6d1d;
+  font-family: inherit;
+  font-size: 0.88rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.login-redesign .login-demo-btn:hover:not(:disabled) {
+  background: #fdf3d7;
+  border-color: #d9bd6e;
+}
+
+.login-redesign .login-demo-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.login-redesign .google-btn:focus-visible,
+.login-redesign .login-submit:focus-visible,
+.login-redesign .login-demo-btn:focus-visible,
+.login-redesign .login-link:focus-visible {
+  outline: 2px solid #1f1b16;
+  outline-offset: 2px;
+}
+
+/* ---------- Divider ---------- */
+
+.login-redesign .login-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1.35rem 0 1.1rem;
+  color: #a39a8a;
+  font-size: 0.78rem;
+  font-weight: 500;
+}
+
+.login-redesign .login-divider::before,
+.login-redesign .login-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #ece6d8;
+}
+
+/* ---------- Email form ---------- */
+
+.login-redesign .email-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  text-align: left;
+}
+
+.login-redesign .email-auth-form .input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.8rem 1rem;
+  border: 1.5px solid #e6e0d2;
+  border-radius: 12px;
+  background: #fdfcf9;
+  color: #1f1b16;
+  font-family: inherit;
+  font-size: 0.95rem;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.login-redesign .email-auth-form .input::placeholder {
+  color: #a89f8e;
+}
+
+.login-redesign .email-auth-form .input:focus {
+  outline: none;
+  border-color: #f8cb46;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(248, 203, 70, 0.35);
+}
+
+.login-redesign .login-form-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.15rem;
+  font-size: 0.82rem;
+}
+
+.login-redesign .login-remember {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #6b6255;
+  cursor: pointer;
+  user-select: none;
+}
+
+.login-redesign .login-remember input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+  accent-color: #e9b60f;
+  cursor: pointer;
+}
+
+.login-redesign .login-link {
+  padding: 0;
+  border: none;
+  background: none;
+  color: #8a6d1d;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.login-redesign .login-link:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Card footer ---------- */
+
+.login-redesign .login-footer {
+  margin: 1.35rem 0 0;
+  font-size: 0.85rem;
+  color: #6b6255;
+}
+
+.login-redesign .login-footer strong {
+  color: #1f1b16;
+  font-weight: 700;
+}
+
+/* ---------- Desktop split layout ---------- */
+
+@media (min-width: 1024px) {
+  .login-page.login-redesign {
+    flex-direction: row;
+  }
+
+  .login-redesign .login-hero {
+    flex: 1 1 55%;
+    display: flex;
+    align-items: flex-end;
+    padding: 4rem 4rem 4.5rem;
+    background: #f8cb46 url('/hero-rider.png') center 28% / min(70%, 540px) no-repeat;
+  }
+
+  .login-redesign .login-hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+      to top,
+      #f8cb46 4%,
+      rgba(248, 203, 70, 0.92) 26%,
+      rgba(248, 203, 70, 0.4) 50%,
+      rgba(248, 203, 70, 0) 68%
+    );
+    pointer-events: none;
+  }
+
+  .login-redesign .login-hero::after {
+    display: none;
+  }
+
+  .login-redesign .login-hero-content {
+    max-width: 30rem;
+  }
+
+  .login-redesign .login-hero-title {
+    font-size: clamp(2.1rem, 3.2vw, 2.75rem);
+  }
+
+  .login-redesign .login-hero-title-mobile {
+    display: none;
+  }
+
+  .login-redesign .login-hero-title-desktop {
+    display: inline;
+  }
+
+  .login-redesign .login-hero-sub {
+    font-size: 1.02rem;
+  }
+
+  .login-redesign .login-feature-icon {
+    background: rgba(255, 255, 255, 0.7);
+  }
+
+  .login-redesign .login-panel {
+    flex: 1 1 45%;
+    align-items: center;
+    padding: 3rem 2rem;
+  }
+
+  .login-redesign .login-card {
+    margin-top: 0;
+    max-width: 27rem;
+    padding: 2.25rem 2.25rem 1.75rem;
+  }
+}
