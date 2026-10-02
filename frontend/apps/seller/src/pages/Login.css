@@ -35,6 +35,10 @@
   pointer-events: none;
 }
 
+.login-redesign .login-hero-img {
+  display: none;
+}
+
 .login-redesign .login-hero-content {
   position: relative;
   z-index: 1;
@@ -120,11 +124,12 @@
 
 .login-redesign .login-logo {
   display: block;
-  width: 60px;
-  height: 60px;
+  width: 150px;
+  height: auto;
   margin: 0 auto 0.85rem;
+  padding: 0.6rem 0.9rem;
   border-radius: 16px;
-  object-fit: cover;
+  background: #1f1b16;
   box-shadow: 0 8px 18px -8px rgba(31, 27, 22, 0.45);
 }
 
@@ -376,27 +381,23 @@
   .login-redesign .login-hero {
     flex: 1 1 55%;
     display: flex;
-    align-items: flex-end;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2.5rem;
     padding: 4rem 4rem 4.5rem;
-    background: #f8cb46 url('/hero-rider.png') center 28% / min(70%, 540px) no-repeat;
-  }
-
-  .login-redesign .login-hero::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(
-      to top,
-      #f8cb46 4%,
-      rgba(248, 203, 70, 0.92) 26%,
-      rgba(248, 203, 70, 0.4) 50%,
-      rgba(248, 203, 70, 0) 68%
-    );
-    pointer-events: none;
+    background: #f8cb46;
   }
 
   .login-redesign .login-hero::after {
     display: none;
+  }
+
+  .login-redesign .login-hero-img {
+    display: block;
+    width: 100%;
+    max-width: 420px;
+    height: auto;
   }
 
   .login-redesign .login-hero-content {

@@ -167,6 +167,7 @@ export default function Login() {
             ))}
           </ul>
         </div>
+        <img src="/hero-rider.png" alt="" className="login-hero-img" />
       </section>
 
       <main className="login-panel">
