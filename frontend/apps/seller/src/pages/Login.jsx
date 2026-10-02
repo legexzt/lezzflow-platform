@@ -5,6 +5,10 @@ import { useAuth } from '../AuthContext.jsx'
 import { useToast } from '../components/Toast.jsx'
 import Loading from '../components/Loading.jsx'
 
+// TEMPORARY demo access for the owner — remove before public launch.
+const DEMO_EMAIL = 'seller.demo@legezt.in'
+const DEMO_PASSWORD = 'LezzTemp#2026'
+
 function GoogleIcon() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden="true">
@@ -36,7 +40,7 @@ export default function Login() {
   const navigate = useNavigate()
   const [busy, setBusy] = useState(false)
   const [logoOk, setLogoOk] = useState(true)
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(DEMO_EMAIL)
   const [password, setPassword] = useState('')
   const [emailBusy, setEmailBusy] = useState(false)
 
@@ -72,6 +76,20 @@ export default function Login() {
     }
   }
 
+  async function handleDemoLogin() {
+    setEmailBusy(true)
+    try {
+      const { signInWithEmailAndPassword } = await import('firebase/auth')
+      const { auth } = await import('../firebase.js')
+      await signInWithEmailAndPassword(auth, DEMO_EMAIL, DEMO_PASSWORD)
+      navigate('/', { replace: true })
+    } catch (err) {
+      toast(emailAuthMessage(err?.code, err?.message), 'error')
+    } finally {
+      setEmailBusy(false)
+    }
+  }
+
   return (
     <div className="login-page">
       <div className="card login-card">
@@ -96,6 +114,14 @@ export default function Login() {
         <div className="login-divider">
           <span>Sign in with email</span>
         </div>
+        <button
+          type="button"
+          className="btn btn-secondary btn-block"
+          onClick={handleDemoLogin}
+          disabled={emailBusy}
+        >
+          {emailBusy ? 'Signing in…' : '⚡ Demo Login (temporary)'}
+        </button>
         <form className="email-auth-form" onSubmit={handleEmailLogin} noValidate>
           <input
             type="email"
