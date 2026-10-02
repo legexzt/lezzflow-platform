@@ -8,6 +8,7 @@ const {
   setupTestDb,
   createTestUser,
   createTestShop,
+  createTestProduct,
   createTestOrder,
 } = require('./helpers/testDb');
 
@@ -40,6 +41,13 @@ describe('Order Status Transitions & Delivery Assignment', () => {
     shop = await createTestShop({
       seller_id: sellerUser.id,
       name: 'Alice Grocery',
+    });
+
+    await createTestProduct({
+      shop_id: shop.id,
+      name: 'Apples',
+      price: 10,
+      stock: 10,
     });
   });
 

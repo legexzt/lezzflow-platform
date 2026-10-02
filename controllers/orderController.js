@@ -167,22 +167,57 @@ async function createOrder(req, res, next) {
       return res.status(400).json({ error: 'Shop is currently closed' });
     }
 
-    // Compute or validate total
+    // 1. Collect all product_id values from items; fetch real prices in ONE query: SELECT id, price FROM products WHERE id = ANY($1)
+    const productIds = items
+      .map((item) => item.product_id)
+      .filter((id) => id !== undefined && id !== null && id !== '');
+
+    const productsResult = await client.query(
+      'SELECT id, price FROM products WHERE id = ANY($1)',
+      [productIds]
+    );
+
+    const productMap = new Map();
+    for (const row of productsResult.rows) {
+      productMap.set(Number(row.id), parseFloat(row.price));
+    }
+
+    // 2-4. Validate product existence, sanitize items, and compute total server-side
+    const sanitizedItems = [];
     let calculatedTotal = 0;
-    if (total !== undefined && !isNaN(parseFloat(total))) {
-      calculatedTotal = parseFloat(total);
-    } else {
-      for (const item of items) {
-        const itemPrice = parseFloat(item.price || 0);
-        const itemQty = parseInt(item.quantity || 1, 10);
-        calculatedTotal += itemPrice * itemQty;
+
+    for (const item of items) {
+      const quantity = parseInt(item.quantity || item.qty || 1, 10);
+      let unitPrice;
+
+      if (item.product_id !== undefined && item.product_id !== null && item.product_id !== '') {
+        const pId = Number(item.product_id);
+        if (!productMap.has(pId)) {
+          await client.query('ROLLBACK');
+          return res.status(400).json({ error: 'Product not found' });
+        }
+        unitPrice = productMap.get(pId);
+      } else {
+        // Custom item (no product_id) keeps client-supplied price
+        unitPrice = parseFloat(item.price || 0);
       }
+
+      const sanitizedItem = {
+        ...item,
+        price: unitPrice,
+      };
+      if (item.unit_price !== undefined) {
+        sanitizedItem.unit_price = unitPrice;
+      }
+      sanitizedItems.push(sanitizedItem);
+
+      calculatedTotal += unitPrice * quantity;
     }
 
     // --- Atomic stock decrement ---
-    for (const item of items) {
+    for (const item of sanitizedItems) {
       if (!item.product_id) continue; // custom item — no product_id, skip guard
-      const qty = parseInt(item.quantity || 1, 10);
+      const qty = parseInt(item.quantity || item.qty || 1, 10);
       // pg-mem workaround: use stock + (-qty) instead of stock - qty, and separate params
       // for the WHERE guard so the same param index isn't reused in SET and WHERE.
       // Only guard products that actually exist in the DB; if not found, skip
@@ -244,7 +279,7 @@ async function createOrder(req, res, next) {
       calculatedTotal = Math.max(calculatedTotal - appliedDiscount, 0);
     }
 
-    const itemsJson = typeof items === 'string' ? items : JSON.stringify(items);
+    const itemsJson = JSON.stringify(sanitizedItems);
 
     const result = await client.query(
       `INSERT INTO orders (customer_id, shop_id, items, fulfillment, total, address, status, offer_id, discount)

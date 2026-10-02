@@ -67,6 +67,22 @@ function createMemPool() {
     returns: DataType.uuid,
     implementation: () => require('crypto').randomUUID(),
   });
+  // Intercept = ANY(...) queries because pg-mem adapter serializes array params
+  // as ARRAY['val'] (text) and does not support = ANY(ARRAY[...]) for integers.
+  memDb.public.interceptQueries(sql => {
+    if (!/=\s*ANY\s*\(/i.test(sql)) return null;
+    let matched = false;
+    const rewritten = sql.replace(/=\s*ANY\s*\(\s*(?:ARRAY\[([^\]]*)\]|(?:\x27?\{([^}]*)\}\x27?))(?:::int\[\]|::text\[\]|::[a-z0-9_]+\[\])?\s*\)/gi, (full, arr, set) => {
+      matched = true;
+      const rawList = arr !== undefined ? arr : set;
+      const items = rawList ? rawList.split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean) : [];
+      return items.length ? `IN (${items.map(x => isNaN(x) ? `'${x}'` : x).join(', ')})` : 'IN (NULL)';
+    });
+    if (matched) {
+      return memDb.public.many(rewritten);
+    }
+    return null;
+  });
   const migrationsDir = path.join(__dirname, 'migrations');
   const files = fs.readdirSync(migrationsDir).filter(f => f.endsWith('.sql')).sort();
   for (const file of files) {

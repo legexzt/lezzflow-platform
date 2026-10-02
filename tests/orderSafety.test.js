@@ -279,4 +279,125 @@ describe('Order Safety (Idempotency, Stock Guard, Transitions, Concurrency)', ()
       }
     });
   });
+
+  // -----------------------------------------------------------------------
+  // 5. Price Integrity & Tampering Protection
+  // -----------------------------------------------------------------------
+  describe('Price Integrity & Tampering Protection', () => {
+    it('(a) a tampered item.price is overridden by the database price', async () => {
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({ uid: customerUser.firebase_uid }),
+      });
+
+      const product = await createTestProduct({
+        shop_id: shop.id,
+        name: 'Premium Basmati Rice',
+        price: 500,
+        stock: 20,
+      });
+
+      // Malicious client attempts to buy 500-rupee product at 1 rupee
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', 'Bearer valid-customer-token')
+        .send({
+          shop_id: shop.id,
+          fulfillment: 'pickup',
+          items: [{ product_id: product.id, name: 'Premium Basmati Rice', price: 1, quantity: 2 }],
+        });
+
+      expect(res.status).toBe(201);
+      // Server-computed total must be 500 * 2 = 1000
+      expect(parseFloat(res.body.total)).toBe(1000);
+
+      // Verify sanitized item price in response
+      const orderItems = typeof res.body.items === 'string' ? JSON.parse(res.body.items) : res.body.items;
+      expect(orderItems[0].price).toBe(500);
+
+      // Verify stored order and items in DB
+      const orderInDb = await query('SELECT * FROM orders WHERE id = $1', [res.body.id]);
+      expect(parseFloat(orderInDb.rows[0].total)).toBe(1000);
+      const dbItems = typeof orderInDb.rows[0].items === 'string' ? JSON.parse(orderInDb.rows[0].items) : orderInDb.rows[0].items;
+      expect(dbItems[0].price).toBe(500);
+    });
+
+    it('(b) a tampered total is ignored and the server-computed total is stored', async () => {
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({ uid: customerUser.firebase_uid }),
+      });
+
+      const product = await createTestProduct({
+        shop_id: shop.id,
+        name: 'Ghee 1L',
+        price: 650,
+        stock: 15,
+      });
+
+      // Client provides correct item price but tampers `total` to 5
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', 'Bearer valid-customer-token')
+        .send({
+          shop_id: shop.id,
+          fulfillment: 'pickup',
+          items: [{ product_id: product.id, name: 'Ghee 1L', price: 650, quantity: 3 }],
+          total: 5,
+        });
+
+      expect(res.status).toBe(201);
+      // Client-sent total: 5 must be ignored; server computes 650 * 3 = 1950
+      expect(parseFloat(res.body.total)).toBe(1950);
+
+      const orderInDb = await query('SELECT * FROM orders WHERE id = $1', [res.body.id]);
+      expect(parseFloat(orderInDb.rows[0].total)).toBe(1950);
+    });
+
+    it('(c) an unknown product_id returns 400', async () => {
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({ uid: customerUser.firebase_uid }),
+      });
+
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', 'Bearer valid-customer-token')
+        .send({
+          shop_id: shop.id,
+          fulfillment: 'pickup',
+          items: [{ product_id: 999999, name: 'Nonexistent Product', price: 10, quantity: 1 }],
+          total: 10,
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBe('Product not found');
+
+      // No order should have been created
+      const orders = await query('SELECT * FROM orders WHERE customer_id = $1', [customerUser.id]);
+      expect(orders.rows).toHaveLength(0);
+    });
+
+    it('(d) a custom item without product_id is still accepted', async () => {
+      jest.spyOn(admin, 'auth').mockReturnValue({
+        verifyIdToken: jest.fn().mockResolvedValue({ uid: customerUser.firebase_uid }),
+      });
+
+      const res = await request(app)
+        .post('/api/orders')
+        .set('Authorization', 'Bearer valid-customer-token')
+        .send({
+          shop_id: shop.id,
+          fulfillment: 'pickup',
+          items: [{ name: 'Custom Spice Blend', price: 150, quantity: 2 }],
+        });
+
+      expect(res.status).toBe(201);
+      expect(parseFloat(res.body.total)).toBe(300);
+
+      const orderItems = typeof res.body.items === 'string' ? JSON.parse(res.body.items) : res.body.items;
+      expect(orderItems[0].name).toBe('Custom Spice Blend');
+      expect(orderItems[0].price).toBe(150);
+
+      const orderInDb = await query('SELECT * FROM orders WHERE id = $1', [res.body.id]);
+      expect(parseFloat(orderInDb.rows[0].total)).toBe(300);
+    });
+  });
 });
