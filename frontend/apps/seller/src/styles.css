@@ -92,22 +92,21 @@ img {
   min-width: 0;
 }
 
-.brand-logo {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
-  display: block;
+.brand-logo-tile {
+  background: #111;
+  border-radius: 10px;
+  height: 38px;
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 8px;
   flex-shrink: 0;
 }
 
-.brand-word {
-  font-weight: 800;
-  font-size: 22px;
-  color: var(--ink);
-  letter-spacing: -0.02em;
-  line-height: 1;
+.brand-logo-tile img {
+  height: 30px;
+  width: auto;
+  display: block;
 }
-.brand-word span { color: var(--brand-dark); }
 
 .brand-badge {
   background: var(--green-soft);

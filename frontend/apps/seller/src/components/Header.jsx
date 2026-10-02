@@ -10,8 +10,9 @@ export default function Header() {
     <header className="app-header">
       <div className="app-header-inner">
         <div className="brand">
-          <img src="/logo-mark.png" alt="LezzFlow" className="brand-logo" />
-          <span className="brand-word">Lezz<span>Flow</span></span>
+          <span className="brand-logo-tile">
+            <img src="/brand-logo.png" alt="LezzFlow" />
+          </span>
           <span className="brand-badge">Seller</span>
         </div>
         <div className="header-right">
