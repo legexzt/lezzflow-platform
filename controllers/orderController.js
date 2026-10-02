@@ -1,4 +1,5 @@
 const { query, getClient } = require('../db');
+const { resolveProductByBarcode } = require('../services/barcodeService');
 
 // Legal status transitions for sellers
 const SELLER_LEGAL_TRANSITIONS = {
@@ -471,6 +472,351 @@ async function assignDelivery(req, res, next) {
   }
 }
 
+/**
+ * POST /api/orders/:id/pack-scan
+ * Seller scans a product barcode while packing an order.
+ * - Resolves barcode to product in seller's shop (404/403)
+ * - Order must exist, belong to seller's shop, status 'accepted' (400/403/404)
+ * - Product must be in order.items, scanned_qty < ordered_qty (400 "already fully scanned")
+ * - Atomically decrement stock: UPDATE products SET stock = stock - 1 WHERE id = $1 AND stock > 0 (400 "out of stock")
+ * - Upsert pack_scans (order_id, product_id) setting qty_scanned = qty_scanned + 1
+ * - Return pack progress & running bill
+ */
+async function packScan(req, res, next) {
+  const client = await getClient();
+  try {
+    const { id } = req.params;
+    const { barcode } = req.body;
+
+    if (!barcode || typeof barcode !== 'string' || !barcode.trim()) {
+      return res.status(400).json({ error: 'Barcode is required' });
+    }
+
+    // b. Order must exist, belong to the seller's shop, and have status 'accepted', else 400/403/404.
+    const orderRes = await query(
+      `SELECT o.*, s.seller_id, s.name AS shop_name, s.address AS shop_address
+       FROM orders o
+       JOIN shops s ON o.shop_id = s.id
+       WHERE o.id = $1`,
+      [id]
+    );
+
+    if (orderRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderRes.rows[0];
+
+    if (order.seller_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: You do not own the shop for this order' });
+    }
+
+    if (order.status !== 'accepted') {
+      return res.status(400).json({
+        error: `Order status must be 'accepted' to pack-scan (current status: '${order.status}')`,
+      });
+    }
+
+    // a. Resolve barcode to a product via the existing barcode service; product must belong to seller's shop, else 404/403.
+    let product;
+    try {
+      const resolved = await resolveProductByBarcode(barcode, order.shop_id);
+      product = resolved.product;
+    } catch (barcodeErr) {
+      return res.status(barcodeErr.status || 400).json({ error: barcodeErr.message });
+    }
+
+    // c. The product must be present in order.items; the already-scanned qty (from pack_scans) must be < ordered qty, else 400 "already fully scanned".
+    const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    if (!Array.isArray(orderItems)) {
+      return res.status(400).json({ error: 'Invalid order items structure' });
+    }
+
+    const orderItem = orderItems.find((item) => Number(item.product_id) === Number(product.id));
+    if (!orderItem) {
+      return res.status(400).json({ error: 'Product is not in this order' });
+    }
+
+    const orderedQty = parseInt(orderItem.qty || orderItem.quantity || 1, 10);
+
+    const existingScanRes = await query(
+      'SELECT qty_scanned FROM pack_scans WHERE order_id = $1 AND product_id = $2',
+      [order.id, product.id]
+    );
+    const alreadyScanned = existingScanRes.rows.length > 0 ? parseInt(existingScanRes.rows[0].qty_scanned, 10) : 0;
+
+    if (alreadyScanned >= orderedQty) {
+      return res.status(400).json({ error: 'already fully scanned' });
+    }
+
+    // Wrap d+e in a transaction
+    await client.query('BEGIN');
+
+    // d. Atomically decrement stock: UPDATE products SET stock = stock - 1, updated_at = CURRENT_TIMESTAMP WHERE id = $1 AND stock > 0; if rowCount = 0 -> 400 "out of stock".
+    const stockRes = await client.query(
+      `UPDATE products
+       SET stock = stock - 1, updated_at = CURRENT_TIMESTAMP
+       WHERE id = $1 AND stock > 0
+       RETURNING stock`,
+      [product.id]
+    );
+
+    if (stockRes.rowCount === 0) {
+      await client.query('ROLLBACK');
+      return res.status(400).json({ error: 'out of stock' });
+    }
+
+    // e. Upsert pack_scans (order_id, product_id) setting qty_scanned = qty_scanned + 1.
+    const upsertRes = await client.query(
+      `INSERT INTO pack_scans (order_id, product_id, qty_scanned, scanned_at)
+       VALUES ($1, $2, 1, CURRENT_TIMESTAMP)
+       ON CONFLICT (order_id, product_id)
+       DO UPDATE SET qty_scanned = pack_scans.qty_scanned + 1, scanned_at = CURRENT_TIMESTAMP
+       RETURNING qty_scanned`,
+      [order.id, product.id]
+    );
+
+    await client.query('COMMIT');
+
+    const scannedQty = parseInt(upsertRes.rows[0].qty_scanned, 10);
+    const remaining = orderedQty - scannedQty;
+
+    // f. Build progress & running_bill:
+    // progress: { scanned_total, ordered_total }
+    // running_bill: { lines: [{product_id, name, qty, unit_price, line_total}], total } where unit prices come from order.items
+    const allScansRes = await query(
+      `SELECT ps.product_id, ps.qty_scanned, p.name AS product_name, p.price AS product_price
+       FROM pack_scans ps
+       JOIN products p ON ps.product_id = p.id
+       WHERE ps.order_id = $1 AND ps.qty_scanned > 0
+       ORDER BY ps.id ASC`,
+      [order.id]
+    );
+
+    const orderedTotal = orderItems.reduce((acc, it) => acc + parseInt(it.qty || it.quantity || 1, 10), 0);
+    const scannedTotal = allScansRes.rows.reduce((acc, row) => acc + parseInt(row.qty_scanned, 10), 0);
+
+    const lines = allScansRes.rows.map((row) => {
+      const oi = orderItems.find((it) => Number(it.product_id) === Number(row.product_id));
+      const unitPrice = oi ? parseFloat(oi.price || oi.unit_price || row.product_price) : parseFloat(row.product_price);
+      const qty = parseInt(row.qty_scanned, 10);
+      const lineTotal = parseFloat((qty * unitPrice).toFixed(2));
+      return {
+        product_id: parseInt(row.product_id, 10),
+        name: oi?.name || row.product_name,
+        qty,
+        unit_price: unitPrice,
+        line_total: lineTotal,
+      };
+    });
+
+    const runningBillTotal = parseFloat(lines.reduce((acc, l) => acc + l.line_total, 0).toFixed(2));
+
+    return res.json({
+      product: {
+        id: product.id,
+        name: product.name,
+        price: parseFloat(product.price),
+      },
+      scanned_qty: scannedQty,
+      ordered_qty: orderedQty,
+      remaining,
+      progress: {
+        scanned_total: scannedTotal,
+        ordered_total: orderedTotal,
+      },
+      running_bill: {
+        lines,
+        total: runningBillTotal,
+      },
+    });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    next(error);
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * GET /api/orders/:id/bill
+ * Returns customer bill built from pack_scans JOIN products plus shops row.
+ * Roles: seller / admin.
+ */
+async function getOrderBill(req, res, next) {
+  try {
+    const { id } = req.params;
+
+    const orderRes = await query(
+      `SELECT o.*, s.name AS shop_name, s.address AS shop_address, s.seller_id
+       FROM orders o
+       JOIN shops s ON o.shop_id = s.id
+       WHERE o.id = $1`,
+      [id]
+    );
+
+    if (orderRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderRes.rows[0];
+
+    if (order.seller_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: You do not own the shop for this order' });
+    }
+
+    const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+
+    const scansRes = await query(
+      `SELECT ps.qty_scanned, p.id AS product_id, p.name, p.price
+       FROM pack_scans ps
+       JOIN products p ON ps.product_id = p.id
+       WHERE ps.order_id = $1 AND ps.qty_scanned > 0
+       ORDER BY ps.id ASC`,
+      [id]
+    );
+
+    const lines = scansRes.rows.map((row) => {
+      const oi = Array.isArray(orderItems)
+        ? orderItems.find((it) => Number(it.product_id) === Number(row.product_id))
+        : null;
+      const unitPrice = oi ? parseFloat(oi.price || oi.unit_price || row.price) : parseFloat(row.price);
+      const qtyScanned = parseInt(row.qty_scanned, 10);
+      const lineTotal = parseFloat((qtyScanned * unitPrice).toFixed(2));
+      return {
+        name: oi?.name || row.name,
+        qty_scanned: qtyScanned,
+        unit_price: unitPrice,
+        line_total: lineTotal,
+      };
+    });
+
+    const total = parseFloat(lines.reduce((acc, l) => acc + l.line_total, 0).toFixed(2));
+
+    return res.json({
+      shop: {
+        name: order.shop_name,
+        address: order.shop_address,
+      },
+      order_id: parseInt(order.id, 10),
+      date: order.created_at,
+      lines,
+      total,
+      status: order.status,
+    });
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * POST /api/orders/:id/confirm-pack
+ * Seller confirms packing complete after scanning all ordered items.
+ * Checks that every item in order.items has scanned_qty >= ordered qty.
+ * Transitions accepted -> packed via transitionOrder.
+ */
+async function confirmPack(req, res, next) {
+  const client = await getClient();
+  try {
+    const { id } = req.params;
+
+    const orderRes = await query(
+      `SELECT o.*, s.seller_id
+       FROM orders o
+       JOIN shops s ON o.shop_id = s.id
+       WHERE o.id = $1`,
+      [id]
+    );
+
+    if (orderRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Order not found' });
+    }
+
+    const order = orderRes.rows[0];
+
+    if (order.seller_id !== req.user.id && req.user.role !== 'admin') {
+      return res.status(403).json({ error: 'Forbidden: You do not own the shop for this order' });
+    }
+
+    const orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+    if (!Array.isArray(orderItems) || orderItems.length === 0) {
+      return res.status(400).json({ error: 'Order has no items' });
+    }
+
+    const scansRes = await query(
+      'SELECT product_id, qty_scanned FROM pack_scans WHERE order_id = $1',
+      [id]
+    );
+    const scanMap = new Map();
+    for (const r of scansRes.rows) {
+      scanMap.set(Number(r.product_id), parseInt(r.qty_scanned, 10));
+    }
+
+    // Resolve any product names from products table if missing in order.items
+    const productIds = orderItems.map((it) => it.product_id).filter(Boolean);
+    let prodNameMap = new Map();
+    if (productIds.length > 0) {
+      const prodRes = await query(
+        'SELECT id, name FROM products WHERE id = ANY($1::int[])',
+        [productIds]
+      );
+      for (const p of prodRes.rows) {
+        prodNameMap.set(Number(p.id), p.name);
+      }
+    }
+
+    const pending = [];
+    let totalItemsPacked = 0;
+
+    for (const item of orderItems) {
+      const pId = Number(item.product_id);
+      const ordered = parseInt(item.qty || item.quantity || 1, 10);
+      const scanned = scanMap.get(pId) || 0;
+      const name = item.name || prodNameMap.get(pId) || `Product ${pId}`;
+
+      if (scanned < ordered) {
+        pending.push({
+          product_id: item.product_id,
+          name,
+          ordered,
+          scanned,
+        });
+      } else {
+        totalItemsPacked += scanned;
+      }
+    }
+
+    if (pending.length > 0) {
+      return res.status(400).json({
+        error: 'Cannot confirm pack: some items have not been fully scanned',
+        pending,
+      });
+    }
+
+    await client.query('BEGIN');
+    let updatedOrder;
+    try {
+      updatedOrder = await transitionOrder(client, id, 'packed', req.user.role);
+    } catch (transErr) {
+      await client.query('ROLLBACK');
+      return res.status(transErr.status || 400).json({ error: transErr.message });
+    }
+    await client.query('COMMIT');
+
+    return res.json({
+      order_id: parseInt(updatedOrder.id, 10),
+      status: 'packed',
+      items_packed: totalItemsPacked,
+      total: parseFloat(updatedOrder.total),
+    });
+  } catch (error) {
+    try { await client.query('ROLLBACK'); } catch (_) {}
+    next(error);
+  } finally {
+    client.release();
+  }
+}
+
 module.exports = {
   createOrder,
   listOrders,
@@ -478,6 +824,10 @@ module.exports = {
   updateOrderStatus,
   assignDelivery,
   transitionOrder,
+  transitionOrderStatus: transitionOrder,
   isValidOrderStatusTransition,
   SELLER_LEGAL_TRANSITIONS,
+  packScan,
+  getOrderBill,
+  confirmPack,
 };

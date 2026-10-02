@@ -1,5 +1,21 @@
 const { query } = require('../db');
 
+function formatProduct(p) {
+  if (!p) return p;
+  const stock = parseInt(p.stock, 10) || 0;
+  let stock_status = 'in_stock';
+  if (stock === 0) {
+    stock_status = 'out_of_stock';
+  } else if (stock > 0 && stock < 5) {
+    stock_status = 'low_stock';
+  }
+  return {
+    ...p,
+    stock,
+    stock_status,
+  };
+}
+
 /**
  * GET /api/products
  * List products with optional filters: shop_id, category, search
@@ -35,7 +51,7 @@ async function listProducts(req, res, next) {
       // Legacy path: return plain array exactly as before
       const sql = `SELECT * FROM products WHERE ${conditions.join(' AND ')} ORDER BY id DESC`;
       const result = await query(sql, params);
-      return res.json(result.rows);
+      return res.json(result.rows.map(formatProduct));
     }
 
     // Paginated path
@@ -52,7 +68,7 @@ async function listProducts(req, res, next) {
     const sql = `SELECT * FROM products WHERE ${conditions.join(' AND ')} ORDER BY id DESC LIMIT $${params.length}`;
 
     const result = await query(sql, params);
-    const rows = result.rows;
+    const rows = result.rows.map(formatProduct);
     const has_more = rows.length > limit;
     const data = has_more ? rows.slice(0, limit) : rows;
     const next_cursor = has_more ? data[data.length - 1].id : null;
@@ -62,6 +78,7 @@ async function listProducts(req, res, next) {
     next(error);
   }
 }
+
 
 
 /**
@@ -125,7 +142,7 @@ async function getProductById(req, res, next) {
       return res.status(404).json({ error: 'Product not found' });
     }
 
-    return res.json(result.rows[0]);
+    return res.json(formatProduct(result.rows[0]));
   } catch (error) {
     next(error);
   }

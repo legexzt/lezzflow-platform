@@ -58,6 +58,55 @@ async function lookupBarcode(code) {
   }
 }
 
+/**
+ * Resolve barcode to a product for a specific shop.
+ * Resolves barcode against the shop's products.
+ * If product belongs to another shop, rejects with 403.
+ * If product is not found, rejects with 404.
+ * @param {string} barcode Barcode string
+ * @param {number} shopId Shop ID
+ * @returns {Promise<{product: object}>}
+ */
+async function resolveProductByBarcode(barcode, shopId) {
+  if (!barcode || typeof barcode !== 'string' || !barcode.trim()) {
+    const err = new Error('Barcode is required');
+    err.status = 400;
+    throw err;
+  }
+
+  const cleanBarcode = barcode.trim();
+  const { query } = require('../db');
+
+  // Check if product exists in this shop
+  const shopProdRes = await query(
+    'SELECT * FROM products WHERE barcode = $1 AND shop_id = $2',
+    [cleanBarcode, shopId]
+  );
+
+  if (shopProdRes.rows.length > 0) {
+    return { product: shopProdRes.rows[0] };
+  }
+
+  // Check if barcode belongs to another shop
+  const otherShopRes = await query(
+    'SELECT id, shop_id FROM products WHERE barcode = $1 LIMIT 1',
+    [cleanBarcode]
+  );
+
+  if (otherShopRes.rows.length > 0) {
+    const err = new Error('Product belongs to another shop');
+    err.status = 403;
+    throw err;
+  }
+
+  const err = new Error('Product not found for barcode');
+  err.status = 404;
+  throw err;
+}
+
 module.exports = {
   lookupBarcode,
+  resolveProductByBarcode,
+  resolveBarcodeToProduct: resolveProductByBarcode,
 };
+
